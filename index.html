@@ -36,6 +36,10 @@
   .scroll-x { overflow-x: auto; }
   /* Sticky Table Header */
   #p-table thead th, #t-table thead th { position: sticky; top: 0; z-index: 5; }
+  /* Click-to-copy tabel */
+  td[data-copy] { cursor: pointer; transition: background-color 0.12s ease; }
+  td[data-copy]:hover { background-color: #f1f5f9; outline: 1px dashed #94a3b8; outline-offset: -1px; }
+  td[data-copy].copied { background-color: #dcfce7 !important; color: #166534 !important; outline: 1px solid #22c55e !important; }
 </style>
 </head>
 <body class="bg-slate-50 text-slate-900 font-sans text-xs min-h-screen flex flex-col">
@@ -514,7 +518,8 @@ function footHtml(scope, total, page, per) {
   const from = total ? (page - 1) * per + 1 : 0, to = Math.min(total, page * per);
   return '<div class="flex items-center gap-3 flex-wrap"><div>Menampilkan <span class="num font-bold text-slate-900">' + from + ' – ' + to + '</span> dari <span class="num font-bold text-slate-900">' + total + '</span> baris</div>' +
     '<label class="flex items-center gap-1.5 border-l border-slate-300 pl-3 text-slate-500 text-xs">Baris: <select data-per="' + scope + '" class="h-6 px-1.5 bg-white border border-slate-300 text-xs font-medium">' +
-    [10, 25, 50, 100].map(n => '<option value="' + n + '"' + (n === per ? ' selected' : '') + '>' + n + '</option>').join('') + '</select></label></div>' + pagerHtml(scope, total, page, per);
+    [10, 25, 50, 100].map(n => '<option value="' + n + '"' + (n === per ? ' selected' : '') + '>' + n + '</option>').join('') + '</select></label>' +
+    '<span class="text-[11px] text-slate-400 border-l border-slate-300 pl-3 hidden md:inline"><span class="material-symbols-outlined" style="font-size:13px;vertical-align:-1px">content_copy</span> Klik data tabel untuk menyalin</span></div>' + pagerHtml(scope, total, page, per);
 }
 function emptyRow(cols, text, icon) {
   return '<tr><td colspan="' + cols + '" class="py-12 text-center text-slate-500"><span class="material-symbols-outlined block mx-auto mb-2 text-slate-400" style="font-size:26px">' + (icon || 'inbox') + '</span>' + text + '</td></tr>';
@@ -596,15 +601,16 @@ function renderPeserta() {
   else body = slice.map((r, i) => {
     const sel = f.sel.has(r.row);
     const tags = (r._dup ? ' <span class="' + B_WARN + '" title="Nama, tanggal, dan trainer sama dengan baris lain">DUPLIKAT</span>' : '');
+    const tgl = r.tanggal ? fmtDate(r.tanggal) : (r.tanggalRaw || '');
     return '<tr class="border-b border-slate-100 ' + (sel ? 'bg-blue-50/90 font-medium' : 'odd:bg-white even:bg-slate-50/40 hover:bg-blue-50/30 transition-colors') + '">' +
       '<td class="w-9 text-center border-r border-slate-100 py-1.5"><input type="checkbox" class="row-cb" data-scope="p" data-key="' + r.row + '" aria-label="Pilih baris ' + r.row + '"' + (sel ? ' checked' : '') + '></td>' +
       '<td class="' + TD + ' num text-slate-400 text-center w-11">' + ((f.page - 1) * f.per + i + 1) + '</td>' +
-      '<td class="' + TD + ' num font-semibold text-blue-700">' + (esc(r.nik) || '<span class="text-slate-300 font-normal italic">—</span>') + '</td>' +
-      '<td class="' + TD + ' font-semibold text-slate-900">' + esc(r.nama) + tags + '</td>' +
-      '<td class="' + TD + ' text-slate-600">' + (esc(r.company) || '<span class="text-slate-300">—</span>') + '</td>' +
-      '<td class="' + TD + ' text-slate-800">' + (esc(r.pelatihan) ? '<span class="inline-flex items-center px-1.5 py-0.5 bg-slate-100 border border-slate-200 text-slate-700 font-medium text-[11px]">' + esc(r.pelatihan) + '</span>' : '<span class="text-slate-300">—</span>') + '</td>' +
-      '<td class="' + TD + ' text-slate-600">' + (esc(r.trainer) || '<span class="text-slate-300">—</span>') + '</td>' +
-      '<td class="' + TD + ' num text-slate-700 font-medium">' + (r.tanggal ? fmtDate(r.tanggal) : (r.tanggalRaw ? '<span class="' + B_WARN + '" title="Format tanggal di sheet tidak terbaca">' + esc(r.tanggalRaw) + '</span>' : '<span class="text-slate-300">—</span>')) + '</td>' +
+      '<td class="' + TD + ' num font-semibold text-blue-700" data-copy="' + esc(r.nik || '') + '" title="Klik untuk menyalin">' + (esc(r.nik) || '<span class="text-slate-300 font-normal italic">—</span>') + '</td>' +
+      '<td class="' + TD + ' font-semibold text-slate-900" data-copy="' + esc(r.nama || '') + '" title="Klik untuk menyalin">' + esc(r.nama) + tags + '</td>' +
+      '<td class="' + TD + ' text-slate-600" data-copy="' + esc(r.company || '') + '" title="Klik untuk menyalin">' + (esc(r.company) || '<span class="text-slate-300">—</span>') + '</td>' +
+      '<td class="' + TD + ' text-slate-800" data-copy="' + esc(r.pelatihan || '') + '" title="Klik untuk menyalin">' + (esc(r.pelatihan) ? '<span class="inline-flex items-center px-1.5 py-0.5 bg-slate-100 border border-slate-200 text-slate-700 font-medium text-[11px]">' + esc(r.pelatihan) + '</span>' : '<span class="text-slate-300">—</span>') + '</td>' +
+      '<td class="' + TD + ' text-slate-600" data-copy="' + esc(r.trainer || '') + '" title="Klik untuk menyalin">' + (esc(r.trainer) || '<span class="text-slate-300">—</span>') + '</td>' +
+      '<td class="' + TD + ' num text-slate-700 font-medium" data-copy="' + esc(tgl) + '" title="Klik untuk menyalin">' + (r.tanggal ? fmtDate(r.tanggal) : (r.tanggalRaw ? '<span class="' + B_WARN + '" title="Format tanggal di sheet tidak terbaca">' + esc(r.tanggalRaw) + '</span>' : '<span class="text-slate-300">—</span>')) + '</td>' +
       '<td class="px-2 text-center whitespace-nowrap w-24 py-1.5"><div class="inline-flex gap-1">' +
         '<button type="button" data-act="p-view" data-key="' + r.row + '" class="px-2 py-0.5 text-[11px] font-semibold border border-blue-200 bg-blue-50 text-blue-700 hover:bg-blue-600 hover:text-white transition-colors" title="Lihat detail">Lihat</button>' +
         '<button type="button" data-act="p-edit" data-key="' + r.row + '" class="px-2 py-0.5 text-[11px] font-medium border border-slate-300 bg-white text-slate-700 hover:bg-slate-800 hover:text-white transition-colors" title="Edit data">Edit</button></div></td></tr>';
@@ -686,17 +692,19 @@ function renderTna() {
     const allSel = total > 0 && rows.every(r => f.sel.has(r.id));
     const body = stateMsg ? emptyRow(11, stateMsg[0], stateMsg[1]) : slice.map((r, i) => {
       const sel = f.sel.has(r.id);
+      const lvlStr = r.level != null ? 'Level ' + r.level : '';
+      const gapStr = r.gap != null ? (r.gap > 0 ? '+' + r.gap : String(r.gap)) : '';
       return '<tr class="border-b border-slate-100 ' + (sel ? 'bg-blue-50/90 font-medium' : 'odd:bg-white even:bg-slate-50/40 hover:bg-blue-50/30 transition-colors') + '">' +
         '<td class="w-9 text-center border-r border-slate-100 py-1.5"><input type="checkbox" class="row-cb" data-scope="t" data-key="' + esc(r.id) + '" aria-label="Pilih ' + esc(r.nama) + '"' + (sel ? ' checked' : '') + '></td>' +
         '<td class="' + TD + ' num text-slate-400 text-center w-11">' + ((f.page - 1) * f.per + i + 1) + '</td>' +
-        '<td class="' + TD + ' num font-semibold text-blue-700">' + esc(r.nik) + '</td>' +
-        '<td class="' + TD + ' font-semibold text-slate-900">' + esc(r.nama) + '</td>' +
-        '<td class="' + TD + ' text-slate-600">' + (esc(r.dept) || '<span class="text-slate-300">—</span>') + '</td>' +
-        '<td class="' + TD + ' text-slate-600">' + (esc(r.jabatan) || '<span class="text-slate-300">—</span>') + '</td>' +
-        '<td class="' + TD + ' text-center"><span class="num font-semibold">Level ' + (r.level == null ? '–' : r.level) + '</span> <span class="num text-slate-400 text-[10px]">/ 5</span></td>' +
-        '<td class="' + TD + ' text-center">' + gapBadge(r.gap) + '</td>' +
-        '<td class="' + TD + ' text-slate-800">' + esc(r.rekomendasi) + (r.prioritas === 'Tinggi' ? ' <span class="' + B_BAD + '">TINGGI</span>' : '') + '</td>' +
-        '<td class="' + TD + ' text-center">' + statusBadge(r.status) + '</td>' +
+        '<td class="' + TD + ' num font-semibold text-blue-700" data-copy="' + esc(r.nik || '') + '" title="Klik untuk menyalin">' + esc(r.nik) + '</td>' +
+        '<td class="' + TD + ' font-semibold text-slate-900" data-copy="' + esc(r.nama || '') + '" title="Klik untuk menyalin">' + esc(r.nama) + '</td>' +
+        '<td class="' + TD + ' text-slate-600" data-copy="' + esc(r.dept || '') + '" title="Klik untuk menyalin">' + (esc(r.dept) || '<span class="text-slate-300">—</span>') + '</td>' +
+        '<td class="' + TD + ' text-slate-600" data-copy="' + esc(r.jabatan || '') + '" title="Klik untuk menyalin">' + (esc(r.jabatan) || '<span class="text-slate-300">—</span>') + '</td>' +
+        '<td class="' + TD + ' text-center" data-copy="' + esc(lvlStr) + '" title="Klik untuk menyalin"><span class="num font-semibold">Level ' + (r.level == null ? '–' : r.level) + '</span> <span class="num text-slate-400 text-[10px]">/ 5</span></td>' +
+        '<td class="' + TD + ' text-center" data-copy="' + esc(gapStr) + '" title="Klik untuk menyalin">' + gapBadge(r.gap) + '</td>' +
+        '<td class="' + TD + ' text-slate-800" data-copy="' + esc(r.rekomendasi || '') + '" title="Klik untuk menyalin">' + esc(r.rekomendasi) + (r.prioritas === 'Tinggi' ? ' <span class="' + B_BAD + '">TINGGI</span>' : '') + '</td>' +
+        '<td class="' + TD + ' text-center" data-copy="' + esc(r.status || '') + '" title="Klik untuk menyalin">' + statusBadge(r.status) + '</td>' +
         '<td class="px-2 text-center w-20 py-1.5"><button type="button" data-act="t-view" data-id="' + esc(r.id) + '" class="px-2 py-0.5 text-[11px] font-semibold border border-blue-200 bg-blue-50 text-blue-700 hover:bg-blue-600 hover:text-white transition-colors">Detail</button></td></tr>';
     }).join('');
     $('#t-table').innerHTML = '<table class="w-full border-collapse text-left min-w-[960px]"><thead><tr class="' + TH_ROW + '">' +
@@ -1035,6 +1043,20 @@ function toggleSel(scope, key, on) {
 }
 
 document.addEventListener('click', e => {
+  const copyCell = e.target.closest('td[data-copy]');
+  if (copyCell && !e.target.closest('button, input, a, [data-act]')) {
+    if (window.getSelection && window.getSelection().toString().trim()) return;
+    const val = (copyCell.dataset.copy || '').trim();
+    if (val && val !== '—' && val !== '–') {
+      copyText(val).then(() => {
+        copyCell.classList.add('copied');
+        setTimeout(() => copyCell.classList.remove('copied'), 450);
+        toast('Disalin: ' + (val.length > 35 ? val.slice(0, 32) + '…' : val));
+      });
+      return;
+    }
+  }
+
   const el = e.target.closest('[data-act],[data-tab],[data-mode],[data-quick],[data-preset],[data-pg],[data-sort]');
   if (!el || el.type === 'checkbox') return;
   const d = el.dataset;
