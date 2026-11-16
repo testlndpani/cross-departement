@@ -35,11 +35,13 @@
   @media (prefers-reduced-motion: reduce) { .bar { animation: none; } }
   .scroll-x { overflow-x: auto; }
   /* Sticky Table Header */
-  #p-table thead th, #t-table thead th { position: sticky; top: 0; z-index: 5; }
+  #p-table thead th, #t-table thead th, #r-table thead th { position: sticky; top: 0; z-index: 5; }
   /* Click-to-copy tabel */
-  td[data-copy] { cursor: pointer; transition: background-color 0.12s ease; }
+  [data-copy] { cursor: pointer; transition: background-color 0.12s ease, color 0.12s ease; }
   td[data-copy]:hover { background-color: #f1f5f9; outline: 1px dashed #94a3b8; outline-offset: -1px; }
   td[data-copy].copied { background-color: #dcfce7 !important; color: #166534 !important; outline: 1px solid #22c55e !important; }
+  div[data-copy]:hover, span[data-copy]:hover { background-color: #e2e8f0; }
+  div[data-copy].copied, span[data-copy].copied { background-color: #dcfce7 !important; color: #166534 !important; font-weight: 700; }
 </style>
 </head>
 <body class="bg-slate-50 text-slate-900 font-sans text-xs min-h-screen flex flex-col">
@@ -69,6 +71,7 @@
     <nav class="flex items-center gap-7 -mb-px" aria-label="Halaman">
       <button type="button" data-tab="peserta" class="tab-btn pb-2.5 px-1 border-b-2 font-semibold text-xs">Data Peserta Pelatihan</button>
       <button type="button" data-tab="tna" class="tab-btn pb-2.5 px-1 border-b-2 font-semibold text-xs">Training Need Analysis (TNA)</button>
+      <button type="button" data-tab="realtime" class="tab-btn pb-2.5 px-1 border-b-2 font-semibold text-xs">Real Time Data</button>
     </nav>
   </div>
   <div id="loadbar" class="h-0.5 w-full"></div>
@@ -177,6 +180,78 @@
       <div id="t-foot" class="border-t border-slate-200 px-3 py-2 flex flex-wrap items-center justify-between gap-3 text-slate-600 bg-slate-50/70 text-xs"></div>
     </div>
   </section>
+
+  <!-- ===================== HALAMAN REAL TIME DATA ===================== -->
+  <section id="view-realtime" class="hidden flex flex-col gap-2.5">
+    <!-- Ringkasan KPI Real Time -->
+    <div class="grid grid-cols-2 sm:grid-cols-4 gap-2">
+      <div class="bg-white border border-slate-300 p-2.5 keyline">
+        <div class="text-[10px] uppercase font-bold text-slate-500 tracking-wider">Total Record</div>
+        <div id="r-stat-total" class="text-lg font-bold num text-slate-900 mt-0.5">0</div>
+      </div>
+      <div class="bg-white border border-slate-300 p-2.5 keyline">
+        <div class="text-[10px] uppercase font-bold text-slate-500 tracking-wider">Lulus</div>
+        <div class="flex items-baseline gap-1.5 mt-0.5">
+          <span id="r-stat-lulus" class="text-lg font-bold num text-emerald-700">0</span>
+          <span id="r-stat-pct" class="text-xs num text-emerald-600 font-semibold">(0%)</span>
+        </div>
+      </div>
+      <div class="bg-white border border-slate-300 p-2.5 keyline">
+        <div class="text-[10px] uppercase font-bold text-slate-500 tracking-wider">Belum Lulus</div>
+        <div id="r-stat-belum" class="text-lg font-bold num text-rose-700 mt-0.5">0</div>
+      </div>
+      <div class="bg-white border border-slate-300 p-2.5 keyline">
+        <div class="text-[10px] uppercase font-bold text-slate-500 tracking-wider">Hanya Absen</div>
+        <div id="r-stat-absen" class="text-lg font-bold num text-slate-700 mt-0.5">0</div>
+      </div>
+    </div>
+
+    <!-- Filter & Kontrol Real Time -->
+    <div class="bg-white border border-slate-300 p-2.5 sm:p-3 keyline flex flex-col gap-2.5">
+      <div class="flex flex-wrap items-center gap-2">
+        <div class="relative flex-1 min-w-[200px] max-w-sm">
+          <span class="material-symbols-outlined absolute left-2.5 top-1/2 -translate-y-1/2 text-slate-400 pointer-events-none" style="font-size:16px">search</span>
+          <input id="r-search" type="search" placeholder="Cari nama, NIK, perusahaan, modul, sertifikat, trainer..." class="w-full h-8 pl-8 pr-2.5 bg-slate-50 border border-slate-300 hover:border-slate-400 focus:bg-white text-xs placeholder:text-slate-400 transition-colors">
+        </div>
+        <select id="r-status" class="h-8 px-2 bg-slate-50 border border-slate-300 hover:border-slate-400 focus:bg-white text-xs max-w-[150px] truncate">
+          <option value="">Semua status</option>
+          <option value="LULUS">LULUS</option>
+          <option value="BELUM LULUS">BELUM LULUS</option>
+          <option value="Hanya Absen">Hanya Absen</option>
+        </select>
+        <select id="r-modul" class="h-8 px-2 bg-slate-50 border border-slate-300 hover:border-slate-400 focus:bg-white text-xs max-w-[200px] truncate"><option value="">Semua modul</option></select>
+        <select id="r-company" class="h-8 px-2 bg-slate-50 border border-slate-300 hover:border-slate-400 focus:bg-white text-xs max-w-[180px] truncate"><option value="">Semua perusahaan</option></select>
+        <div class="flex items-center h-8 border border-slate-300 bg-slate-50 hover:border-slate-400 px-2 gap-1.5 text-slate-600 transition-colors">
+          <span class="material-symbols-outlined text-slate-400" style="font-size:15px">calendar_today</span>
+          <input id="r-from" type="date" title="Tanggal training dari" class="h-6 px-1 text-xs bg-transparent border-0 num">
+          <span class="text-slate-400">–</span>
+          <input id="r-to" type="date" title="Tanggal training sampai" class="h-6 px-1 text-xs bg-transparent border-0 num">
+        </div>
+        <button type="button" data-act="r-reset" class="h-8 px-2.5 bg-white border border-slate-300 hover:bg-slate-100 text-slate-700 font-medium flex items-center gap-1 transition-colors" title="Kembalikan semua filter ke awal"><span class="material-symbols-outlined" style="font-size:15px">restart_alt</span>Reset</button>
+        <div class="ml-auto inline-flex items-center gap-1.5 px-2.5 py-1 bg-slate-100 border border-slate-200 text-slate-600 text-xs font-medium">
+          Total: <span id="r-count" class="num font-bold text-slate-900">0</span><span class="text-slate-400">/</span><span id="r-all" class="num text-slate-600">0</span> data
+          <span id="r-selbadge" class="hidden ml-1.5 px-1.5 py-0.5 bg-blue-600 text-white text-[10px] font-bold num"></span>
+        </div>
+      </div>
+      <div class="flex flex-wrap items-center justify-between gap-2 pt-1 border-t border-slate-200 text-xs">
+        <div class="flex items-center gap-1.5 flex-wrap">
+          <span class="text-slate-500 text-[11px] font-semibold uppercase tracking-wider">Status Cepat:</span>
+          <div id="r-quick" class="inline-flex gap-1"></div>
+        </div>
+        <div id="r-bulk" class="flex items-center gap-1.5">
+          <span id="r-bulk-label" class="text-slate-500 text-xs font-medium">Aksi massal (0 baris):</span>
+          <button type="button" data-act="r-export-sel" class="h-6 px-2 bg-white border border-slate-300 hover:bg-slate-100 text-slate-700 font-medium flex items-center gap-1 opacity-40" disabled><span class="material-symbols-outlined" style="font-size:13px">download</span>Ekspor Terpilih</button>
+          <button type="button" data-act="r-copy-sel" class="h-6 px-2 bg-white border border-slate-300 hover:bg-slate-100 text-slate-700 font-medium flex items-center gap-1 opacity-40" disabled><span class="material-symbols-outlined" style="font-size:13px">content_copy</span>Salin Baris</button>
+        </div>
+      </div>
+    </div>
+
+    <!-- Tabel Real Time Data -->
+    <div class="bg-white border border-slate-300 keyline flex flex-col">
+      <div id="r-table" class="scroll-x overflow-y-auto max-h-[calc(100vh-270px)]"></div>
+      <div id="r-foot" class="p-2 sm:p-2.5 border-t border-slate-300 bg-slate-50 flex flex-wrap items-center justify-between gap-2 text-xs"></div>
+    </div>
+  </section>
 </main>
 
 <footer class="w-full bg-white border-t border-slate-300 py-3 px-4 sm:px-6 mt-auto">
@@ -240,9 +315,10 @@ const cfg = () => ({ url: (LS.get('portal.apiUrl') || API_URL).trim() });
 /* ---------- state ---------- */
 const S = {
   tab: 'peserta', demo: false, loading: false, synced: null,
-  peserta: [], tna: [],
+  peserta: [], tna: [], realtime: [],
   p: { search: '', company: '', trainer: '', course: '', from: '', to: '', quick: 'all', flag: '', sort: { key: 'tanggal', dir: 'desc' }, page: 1, per: 25, sel: new Set() },
-  t: { mode: 'individu', search: '', dept: '', status: '', preset: '', sort: { key: 'gap', dir: 'asc' }, page: 1, per: 25, sel: new Set(), agg: [] }
+  t: { mode: 'individu', search: '', dept: '', status: '', preset: '', sort: { key: 'gap', dir: 'asc' }, page: 1, per: 25, sel: new Set(), agg: [] },
+  r: { search: '', status: '', modul: '', company: '', from: '', to: '', quick: 'all', sort: { key: 'tanggal', dir: 'desc' }, page: 1, per: 25, sel: new Set() }
 };
 
 /* ---------- API ke Google Apps Script ---------- */
@@ -328,11 +404,16 @@ function prep() {
   S.tna.forEach(r => {
     r._hay = [r.nik, r.nama, r.dept, r.jabatan, r.rekomendasi, r.id].join(' ').toLowerCase();
   });
+  S.realtime.forEach(r => {
+    r._hay = [r.idUjian, r.nik, r.nama, r.company, r.modul, r.status, r.noSertifikat, r.trainer, r.batch, r.penyelenggara].join(' ').toLowerCase();
+  });
   // buang pilihan yang barisnya sudah tidak ada
   const rows = new Set(S.peserta.map(r => r.row));
   S.p.sel = new Set(Array.from(S.p.sel).filter(k => rows.has(k)));
   const ids = new Set(S.tna.map(r => r.id));
   S.t.sel = new Set(Array.from(S.t.sel).filter(k => ids.has(k)));
+  const rIds = new Set(S.realtime.map(r => r.idUjian));
+  S.r.sel = new Set(Array.from(S.r.sel).filter(k => rIds.has(k)));
   fillFilters();
 }
 
@@ -350,6 +431,13 @@ function fillFilters() {
   S.p.company = $('#p-company').value; S.p.trainer = $('#p-trainer').value; S.p.course = $('#p-course').value;
   fillSelect($('#t-dept'), sortedUniq(DEPT_DEFAULT.concat(S.tna.map(r => r.dept))), 'Semua departemen');
   S.t.dept = $('#t-dept').value;
+
+  if ($('#r-modul')) {
+    fillSelect($('#r-modul'), sortedUniq(S.realtime.map(r => r.modul)), 'Semua modul');
+    fillSelect($('#r-company'), sortedUniq(S.realtime.map(r => r.company)), 'Semua perusahaan');
+    S.r.modul = $('#r-modul').value;
+    S.r.company = $('#r-company').value;
+  }
 }
 
 /* ---------- koneksi, status, banner, toast ---------- */
@@ -382,13 +470,15 @@ function handleError(e) {
 
 const CACHE_KEYS = {
   peserta: 'portal.cache.peserta',
-  tna: 'portal.cache.tna'
+  tna: 'portal.cache.tna',
+  realtime: 'portal.cache.realtime'
 };
 
 function saveCache() {
   try {
     localStorage.setItem(CACHE_KEYS.peserta, JSON.stringify(S.peserta));
     localStorage.setItem(CACHE_KEYS.tna, JSON.stringify(S.tna));
+    localStorage.setItem(CACHE_KEYS.realtime, JSON.stringify(S.realtime));
   } catch (e) { /* jika kuota localStorage penuh, abaikan */ }
 }
 
@@ -396,6 +486,11 @@ function loadCache() {
   try {
     const cp = localStorage.getItem(CACHE_KEYS.peserta);
     const ct = localStorage.getItem(CACHE_KEYS.tna);
+    const cr = localStorage.getItem(CACHE_KEYS.realtime);
+    if (cr) {
+      const r = JSON.parse(cr);
+      if (Array.isArray(r) && r.length > 0) S.realtime = r;
+    }
     if (cp) {
       const p = JSON.parse(cp);
       if (Array.isArray(p) && p.length > 0) {
@@ -411,6 +506,67 @@ function loadCache() {
     }
   } catch (e) { /* abaikan */ }
   return false;
+}
+
+let gvizLoading = false;
+function loadRealtimeGviz() {
+  if (gvizLoading) return;
+  gvizLoading = true;
+  window.onGvizRealtime = function(data) {
+    gvizLoading = false;
+    try {
+      if (!data || !data.table || !data.table.rows) return;
+      const rows = data.table.rows.map(row => {
+        const c = row.c || [];
+        const g = (i) => {
+          if (!c[i]) return '';
+          return c[i].f != null ? String(c[i].f).trim() : (c[i].v != null ? String(c[i].v).trim() : '');
+        };
+        const rawTgl = g(16);
+        let isoDate = '';
+        if (rawTgl) {
+          const m = /^(\d{1,2})\/(\d{1,2})\/(\d{4})$/.exec(rawTgl);
+          if (m) isoDate = m[3] + '-' + pad2(m[1]) + '-' + pad2(m[2]);
+        }
+        return {
+          idUjian: g(0),
+          timestamp: g(1),
+          pin: g(2),
+          batch: g(3),
+          nik: g(4),
+          nama: g(5),
+          idModul: g(6),
+          modul: g(7),
+          penyelenggara: g(8),
+          terjawab: g(9),
+          benar: g(10),
+          skor: g(11),
+          status: g(12),
+          sisaWaktu: g(13),
+          jawabanJson: g(14),
+          noSertifikat: g(15),
+          tanggal: isoDate,
+          tanggalRaw: rawTgl,
+          trainer: g(17),
+          specialist: g(18),
+          jenisTes: g(19),
+          company: g(20)
+        };
+      }).filter(r => r.idUjian || r.nama || r.nik);
+
+      if (rows.length) {
+        S.realtime = rows;
+        saveCache();
+        prep();
+        renderRealtime();
+      }
+    } catch (e) {
+      console.error('Error parsing gviz realtime data', e);
+    }
+  };
+  const script = document.createElement('script');
+  script.src = 'https://docs.google.com/spreadsheets/d/1pU2OqrlmYer5OWmUBW_C2ym1qzHLMNMjQ0Y3Nge7xZA/gviz/tq?gid=156060053&tqx=responseHandler:window.onGvizRealtime';
+  document.head.appendChild(script);
 }
 
 async function load() {
@@ -430,6 +586,11 @@ async function load() {
     const d = await api('bootstrap');
     S.peserta = d.peserta || [];
     S.tna = d.tna || [];
+    if (d.realtime && d.realtime.length) {
+      S.realtime = d.realtime;
+    } else {
+      loadRealtimeGviz();
+    }
     saveCache();
     prep();
     S.synced = new Date();
@@ -438,6 +599,7 @@ async function load() {
   } catch (e) {
     if (!hadCache) handleError(e);
     else toast('Gagal memperbarui dari server: ' + e.message, 'error');
+    if (!S.realtime.length) loadRealtimeGviz();
   } finally {
     S.loading = false;
     showBar(false);
@@ -740,26 +902,205 @@ function renderTna() {
 }
 
 /* =====================================================================
+ *  HALAMAN REAL TIME DATA
+ * ===================================================================== */
+const R_COLS = [
+  { k: 'nama', t: 'Karyawan (Nama & NIK)' },
+  { k: 'company', t: 'Perusahaan' },
+  { k: 'modul', t: 'Modul Pelatihan' },
+  { k: 'status', t: 'Status' },
+  { k: 'tanggal', t: 'Sertifikat & Pelaksanaan' }
+];
+
+function rFiltered() {
+  const f = S.r, q = f.search.trim().toLowerCase();
+  return S.realtime.filter(r => {
+    if (q && r._hay.indexOf(q) < 0) return false;
+    if (f.status && r.status !== f.status) return false;
+    if (f.modul && r.modul !== f.modul) return false;
+    if (f.company && r.company !== f.company) return false;
+    if (f.from && r.tanggal && r.tanggal < f.from) return false;
+    if (f.to && r.tanggal && r.tanggal > f.to) return false;
+    if (f.quick === 'lulus' && r.status !== 'LULUS') return false;
+    if (f.quick === 'belum' && r.status !== 'BELUM LULUS') return false;
+    if (f.quick === 'absen' && r.status !== 'Hanya Absen') return false;
+    return true;
+  });
+}
+
+function rStats(rows) {
+  let lulus = 0, belum = 0, absen = 0;
+  rows.forEach(r => {
+    if (r.status === 'LULUS') lulus++;
+    else if (r.status === 'BELUM LULUS') belum++;
+    else if (r.status === 'Hanya Absen') absen++;
+  });
+  const pct = rows.length ? Math.round((lulus / rows.length) * 100) : 0;
+  return { total: rows.length, lulus, belum, absen, pct };
+}
+
+function rStatusBadge(s) {
+  if (s === 'LULUS') return '<span class="inline-block px-1.5 py-0.5 border text-[10px] font-bold num whitespace-nowrap bg-emerald-50 text-emerald-800 border-emerald-300">LULUS</span>';
+  if (s === 'BELUM LULUS') return '<span class="inline-block px-1.5 py-0.5 border text-[10px] font-bold num whitespace-nowrap bg-rose-50 text-rose-800 border-rose-300">BELUM LULUS</span>';
+  if (s === 'Hanya Absen') return '<span class="inline-block px-1.5 py-0.5 border text-[10px] font-bold num whitespace-nowrap bg-slate-100 text-slate-700 border-slate-300">HANYA ABSEN</span>';
+  return '<span class="inline-block px-1.5 py-0.5 border text-[10px] font-bold num whitespace-nowrap bg-slate-50 text-slate-500 border-slate-200">' + esc(s || '—') + '</span>';
+}
+
+function rSkorBadge(skor) {
+  const n = parseFloat(skor);
+  if (isNaN(n) || skor === '' || skor == null || skor === '-') return '<span class="text-slate-300">—</span>';
+  let cls = 'text-slate-800 font-semibold';
+  if (n >= 85) cls = 'text-emerald-700 font-bold';
+  else if (n >= 70) cls = 'text-blue-700 font-semibold';
+  else if (n > 0) cls = 'text-rose-700 font-bold';
+  return '<span class="num ' + cls + '">' + esc(skor) + '</span>';
+}
+
+function renderRealtime() {
+  const f = S.r, rows = rFiltered(), total = rows.length;
+  const sorted = sortRows(rows, f.sort);
+  const pages = Math.max(1, Math.ceil(total / f.per));
+  if (f.page > pages) f.page = pages;
+  const slice = sorted.slice((f.page - 1) * f.per, f.page * f.per);
+
+  $('#r-count').textContent = total;
+  $('#r-all').textContent = S.realtime.length;
+
+  const st = rStats(S.realtime);
+  $('#r-stat-total').textContent = st.total;
+  $('#r-stat-lulus').textContent = st.lulus;
+  $('#r-stat-pct').textContent = '(' + st.pct + '%)';
+  $('#r-stat-belum').textContent = st.belum;
+  $('#r-stat-absen').textContent = st.absen;
+
+  const n = f.sel.size;
+  const badge = $('#r-selbadge');
+  if (badge) {
+    badge.classList.toggle('hidden', !n);
+    badge.textContent = n + ' terpilih';
+  }
+  const bulkLabel = $('#r-bulk-label');
+  if (bulkLabel) bulkLabel.textContent = 'Aksi massal (' + n + ' baris):';
+  $$('#r-bulk button').forEach(b => { b.disabled = !n; b.classList.toggle('opacity-40', !n); });
+
+  const R_QUICK = [
+    ['all', 'Semua Data'],
+    ['lulus', 'Lulus'],
+    ['belum', 'Belum Lulus'],
+    ['absen', 'Hanya Absen']
+  ];
+  $('#r-quick').innerHTML = R_QUICK.map(q => {
+    const on = f.quick === q[0];
+    return '<button type="button" data-rquick="' + q[0] + '" class="h-6 px-2 border text-[11px] font-medium flex items-center gap-1 transition-colors ' + (on ? 'bg-blue-600 border-blue-600 text-white font-semibold' : 'bg-white border-slate-300 hover:bg-slate-100 text-slate-700') + '">' + (on ? '<span class="material-symbols-outlined" style="font-size:12px">check</span>' : '') + q[1] + '</button>';
+  }).join('');
+
+  const allSel = total > 0 && rows.every(r => f.sel.has(r.idUjian));
+  let body;
+  if (S.loading && !S.realtime.length) body = emptyRow(8, 'Memuat Real Time Data dari Google Sheets…', 'sync');
+  else if (!S.realtime.length) body = emptyRow(8, 'Belum ada data real time.', 'pending_actions');
+  else if (!total) body = emptyRow(8, 'Tidak ada data yang cocok dengan filter. Ubah atau reset filter.', 'filter_alt_off');
+  else body = slice.map((r, i) => {
+    const sel = f.sel.has(r.idUjian);
+    const tgl = r.tanggal ? fmtDate(r.tanggal) : (r.tanggalRaw || '');
+    return '<tr class="border-b border-slate-100 ' + (sel ? 'bg-blue-50/90 font-medium' : 'odd:bg-white even:bg-slate-50/40 hover:bg-blue-50/30 transition-colors') + '">' +
+      '<td class="w-9 text-center border-r border-slate-100 py-1.5"><input type="checkbox" class="row-cb" data-scope="r" data-key="' + esc(r.idUjian) + '" aria-label="Pilih ' + esc(r.nama) + '"' + (sel ? ' checked' : '') + '></td>' +
+      '<td class="' + TD + ' num text-slate-400 text-center w-11">' + ((f.page - 1) * f.per + i + 1) + '</td>' +
+      '<td class="' + TD + '">' +
+        '<div class="font-semibold text-slate-900 leading-tight" data-copy="' + esc(r.nama || '') + '" title="Klik untuk menyalin Nama">' + esc(r.nama) + '</div>' +
+        '<div class="num text-[11px] text-blue-700 font-medium mt-0.5" data-copy="' + esc(r.nik || '') + '" title="Klik untuk menyalin NIK">' + (esc(r.nik) || '<span class="text-slate-300 font-normal italic">—</span>') + '</div>' +
+      '</td>' +
+      '<td class="' + TD + ' text-slate-600" data-copy="' + esc(r.company || '') + '" title="Klik untuk menyalin Perusahaan">' + (esc(r.company) || '<span class="text-slate-300">—</span>') + '</td>' +
+      '<td class="' + TD + ' text-slate-800" data-copy="' + esc(r.modul || '') + '" title="Klik untuk menyalin Modul">' + (esc(r.modul) ? '<span class="inline-flex items-center px-1.5 py-0.5 bg-slate-100 border border-slate-200 text-slate-700 font-medium text-[11px]">' + esc(r.modul) + '</span>' : '<span class="text-slate-300">—</span>') + '</td>' +
+      '<td class="' + TD + ' text-center" data-copy="' + esc(r.status || '') + '" title="Klik untuk menyalin Status">' + rStatusBadge(r.status) + '</td>' +
+      '<td class="' + TD + '">' +
+        '<div class="num font-semibold text-slate-800 text-[11px] leading-tight" data-copy="' + esc(r.noSertifikat || '') + '" title="Klik untuk menyalin No. Sertifikat">' + (esc(r.noSertifikat) || '<span class="text-slate-300 font-normal italic">Tanpa sertifikat</span>') + '</div>' +
+        '<div class="text-[11px] text-slate-500 mt-0.5 flex items-center gap-1.5 flex-wrap">' +
+          '<span class="num text-slate-700 font-medium" data-copy="' + esc(tgl) + '" title="Klik untuk menyalin Tanggal">' + (tgl || '<span class="text-slate-300">—</span>') + '</span>' +
+          (r.trainer ? '<span class="text-slate-300">•</span><span class="text-slate-600" data-copy="' + esc(r.trainer) + '" title="Klik untuk menyalin Trainer">' + esc(r.trainer) + '</span>' : '') +
+        '</div>' +
+      '</td>' +
+      '<td class="px-2 text-center whitespace-nowrap w-16 py-1.5">' +
+        '<button type="button" data-act="r-view" data-id="' + esc(r.idUjian) + '" class="px-2 py-0.5 text-[11px] font-semibold border border-blue-200 bg-blue-50 text-blue-700 hover:bg-blue-600 hover:text-white transition-colors" title="Lihat detail lengkap">Lihat</button>' +
+      '</td></tr>';
+  }).join('');
+
+  $('#r-table').innerHTML = '<table class="w-full border-collapse text-left min-w-[760px]"><thead><tr class="' + TH_ROW + '">' +
+    '<th class="w-9 text-center border-r border-slate-200 py-2"><input type="checkbox" data-act="r-sel-all" aria-label="Pilih semua hasil filter"' + (allSel ? ' checked' : '') + '></th>' +
+    '<th class="w-11 text-center border-r border-slate-200 py-2">No</th>' + sortHead('r', R_COLS, f.sort) + '<th class="w-16 px-2 text-center py-2">Aksi</th></tr></thead><tbody>' + body + '</tbody></table>';
+  $('#r-foot').innerHTML = footHtml('r', total, f.page, f.per);
+}
+
+function openRealtimeView(rec) {
+  let jawabanHtml = '';
+  if (rec.jawabanJson && rec.jawabanJson !== '{}') {
+    try {
+      const jw = typeof rec.jawabanJson === 'string' ? JSON.parse(rec.jawabanJson) : rec.jawabanJson;
+      const entries = Object.entries(jw);
+      if (entries.length) {
+        jawabanHtml = '<div><div class="font-semibold text-slate-700 mb-1.5">Rincian Jawaban Ujian (' + entries.length + ' Soal):</div>' +
+          '<div class="grid grid-cols-2 sm:grid-cols-4 gap-1.5 p-2 bg-slate-50 border border-slate-200 max-h-36 overflow-y-auto text-xs">' +
+          entries.map(([k, v]) => '<div class="px-1.5 py-0.5 bg-white border border-slate-200 flex justify-between font-mono"><span class="text-slate-500">' + esc(k) + ':</span><span class="font-bold text-blue-700">' + esc(v) + '</span></div>').join('') +
+          '</div></div>';
+      }
+    } catch (e) { /* abaikan parsing */ }
+  }
+
+  openModal(mHead(rec.nama, 'ID Ujian: ' + esc(rec.idUjian)) +
+    '<div class="p-4 flex flex-col gap-3.5"><div class="grid grid-cols-1 sm:grid-cols-2 gap-2">' +
+    kv('ID Karyawan / NIK', esc(rec.nik), true) + kv('Perusahaan', esc(rec.company)) +
+    kv('Modul Pelatihan', esc(rec.modul)) + kv('Penyelenggara', esc(rec.penyelenggara || 'LnD')) +
+    kv('Batch / Sesi', esc(rec.batch) || '—') + kv('Jenis Tes', esc(rec.jenisTes) || '—') +
+    kv('Trainer', esc(rec.trainer) || '—') + kv('Tanggal Training', rec.tanggal ? fmtDate(rec.tanggal) : esc(rec.tanggalRaw || '—'), true) +
+    kv('Skor Akhir', (rec.skor || '0') + ' (Terjawab: ' + (rec.terjawab || '—') + ', Benar: ' + (rec.benar || '—') + ')', true) +
+    kv('Status Kelulusan', rStatusBadge(rec.status)) +
+    kv('No. Sertifikat', esc(rec.noSertifikat) || '—', true) + kv('Sisa Waktu', esc(rec.sisaWaktu) || '—', true) +
+    kv('Kode PIN', esc(rec.pin) || '—') + kv('Waktu Submit', esc(rec.timestamp) || '—', true) +
+    '</div>' +
+    (rec.specialist ? '<div><span class="text-slate-500 font-medium">Specialist:</span> <span class="text-slate-800">' + esc(rec.specialist) + '</span></div>' : '') +
+    jawabanHtml +
+    '</div>' +
+    '<div class="px-4 py-3 border-t border-slate-200 flex justify-end gap-2">' + btn('Tutup', 'modal-close') + '</div>', 'max-w-xl');
+}
+
+/* =====================================================================
  *  RENDER, TAB, HEADER
  * ===================================================================== */
 function renderHeader() {
-  const peserta = S.tab === 'peserta';
-  $('#hdr-title').textContent = peserta ? 'Data Peserta Pelatihan' : 'Training Need Analysis (TNA)';
-  $('#hdr-sub').textContent = peserta ? 'Portal Pelatihan & Induksi OHS' : 'Pencarian dan analisis kebutuhan pelatihan karyawan';
-  $('#add-label').textContent = peserta ? 'Tambah Peserta' : 'Tambah Kebutuhan';
+  const tab = S.tab;
+  if (tab === 'peserta') {
+    $('#hdr-title').textContent = 'Data Peserta Pelatihan';
+    $('#hdr-sub').textContent = 'Portal Pelatihan & Induksi OHS';
+    $('#add-label').textContent = 'Tambah Peserta';
+    const bAdd = $('button[data-act="add"]'); if (bAdd) bAdd.classList.remove('hidden');
+  } else if (tab === 'tna') {
+    $('#hdr-title').textContent = 'Training Need Analysis (TNA)';
+    $('#hdr-sub').textContent = 'Pencarian dan analisis kebutuhan pelatihan karyawan';
+    $('#add-label').textContent = 'Tambah Kebutuhan';
+    const bAdd = $('button[data-act="add"]'); if (bAdd) bAdd.classList.remove('hidden');
+  } else if (tab === 'realtime') {
+    $('#hdr-title').textContent = 'Real Time Data — Ujian & Presensi';
+    $('#hdr-sub').textContent = 'Hasil pelatihan, evaluasi sertifikasi & presensi realtime';
+    $('#add-label').textContent = 'Tambah Data';
+    const bAdd = $('button[data-act="add"]'); if (bAdd) bAdd.classList.add('hidden');
+  }
   $$('.tab-btn').forEach(b => {
     const on = b.dataset.tab === S.tab;
     b.className = 'tab-btn pb-2.5 px-1 border-b-2 font-semibold text-xs ' + (on ? 'border-blue-600 text-blue-600' : 'border-transparent text-slate-500 hover:text-slate-800');
     if (on) b.setAttribute('aria-current', 'page'); else b.removeAttribute('aria-current');
   });
-  $('#view-peserta').classList.toggle('hidden', !peserta);
-  $('#view-tna').classList.toggle('hidden', peserta);
+  $('#view-peserta').classList.toggle('hidden', tab !== 'peserta');
+  $('#view-tna').classList.toggle('hidden', tab !== 'tna');
+  $('#view-realtime').classList.toggle('hidden', tab !== 'realtime');
 }
-function renderAll() { renderHeader(); renderPeserta(); renderTna(); }
+function renderAll() { renderHeader(); renderPeserta(); renderTna(); renderRealtime(); }
 function setTab(tab, updateHash) {
-  S.tab = tab === 'tna' ? 'tna' : 'peserta';
+  S.tab = ['tna', 'realtime'].includes(tab) ? tab : 'peserta';
   if (updateHash !== false) { try { history.replaceState(null, '', '#' + S.tab); } catch (e) { location.hash = S.tab; } }
   renderHeader();
+  if (S.tab === 'realtime') {
+    if (!S.realtime.length) loadRealtimeGviz();
+    else renderRealtime();
+  }
 }
 
 /* =====================================================================
@@ -1015,14 +1356,31 @@ function copyText(text) {
   if (navigator.clipboard && navigator.clipboard.writeText) return navigator.clipboard.writeText(text).catch(fallback);
   fallback(); return Promise.resolve();
 }
+const R_HEAD = ['Nama Karyawan', 'ID Karyawan / NIK', 'Perusahaan', 'Nama Modul Pelatihan', 'Status Kelulusan', 'No. Sertifikat', 'Tanggal Training', 'Nama Trainer', 'Batch Sesi'];
+function rAoa(rows) {
+  return rows.map(r => [
+    r.nama || '',
+    r.nik || '',
+    r.company || '',
+    r.modul || '',
+    r.status || '',
+    r.noSertifikat || '',
+    r.tanggal ? dmy(r.tanggal) : (r.tanggalRaw || ''),
+    r.trainer || '',
+    r.batch || ''
+  ]);
+}
 function doExport(selectedOnly) {
   const stamp = todayIso();
   if (S.tab === 'peserta') {
     let rows = pFiltered(); if (selectedOnly) rows = rows.filter(r => S.p.sel.has(r.row));
     exportTable('peserta-pelatihan-' + stamp, P_HEAD, pAoa(rows));
-  } else {
+  } else if (S.tab === 'tna') {
     let rows = sortRows(tFiltered(), S.t.sort); if (selectedOnly) rows = rows.filter(r => S.t.sel.has(r.id));
     exportTable('tna-' + stamp, T_HEAD, tAoa(rows));
+  } else if (S.tab === 'realtime') {
+    let rows = sortRows(rFiltered(), S.r.sort); if (selectedOnly) rows = rows.filter(r => S.r.sel.has(r.idUjian));
+    exportTable('realtime-data-' + stamp, R_HEAD, rAoa(rows));
   }
 }
 
@@ -1037,13 +1395,18 @@ function resetT() {
   Object.assign(S.t, { search: '', dept: '', status: '', preset: '', page: 1 });
   ['#t-search', '#t-dept', '#t-status'].forEach(s => { $(s).value = ''; });
 }
+function resetR() {
+  Object.assign(S.r, { search: '', status: '', modul: '', company: '', from: '', to: '', quick: 'all', page: 1 });
+  ['#r-search', '#r-status', '#r-modul', '#r-company', '#r-from', '#r-to'].forEach(s => { const el = $(s); if (el) el.value = ''; });
+}
 function toggleSel(scope, key, on) {
-  const set = scope === 'p' ? S.p.sel : S.t.sel, k = scope === 'p' ? Number(key) : key;
+  const set = scope === 'p' ? S.p.sel : (scope === 't' ? S.t.sel : S.r.sel);
+  const k = scope === 'p' ? Number(key) : key;
   if (on) set.add(k); else set.delete(k);
 }
 
 document.addEventListener('click', e => {
-  const copyCell = e.target.closest('td[data-copy]');
+  const copyCell = e.target.closest('[data-copy]');
   if (copyCell && !e.target.closest('button, input, a, [data-act]')) {
     if (window.getSelection && window.getSelection().toString().trim()) return;
     const val = (copyCell.dataset.copy || '').trim();
@@ -1057,19 +1420,20 @@ document.addEventListener('click', e => {
     }
   }
 
-  const el = e.target.closest('[data-act],[data-tab],[data-mode],[data-quick],[data-preset],[data-pg],[data-sort]');
+  const el = e.target.closest('[data-act],[data-tab],[data-mode],[data-quick],[data-rquick],[data-preset],[data-pg],[data-sort]');
   if (!el || el.type === 'checkbox') return;
   const d = el.dataset;
 
   if (d.tab) { setTab(d.tab); return; }
   if (d.mode) { S.t.mode = d.mode; S.t.page = 1; renderTna(); return; }
   if (d.quick) { setQuick(d.quick); renderPeserta(); return; }
+  if (d.rquick) { S.r.quick = d.rquick; S.r.page = 1; renderRealtime(); return; }
   if (d.preset) { S.t.preset = S.t.preset === d.preset ? '' : d.preset; S.t.page = 1; renderTna(); return; }
-  if (d.pg) { const s = S[d.scope]; s.page = Math.max(1, +d.pg); d.scope === 'p' ? renderPeserta() : renderTna(); return; }
+  if (d.pg) { const s = S[d.scope]; s.page = Math.max(1, +d.pg); d.scope === 'p' ? renderPeserta() : (d.scope === 't' ? renderTna() : renderRealtime()); return; }
   if (d.sort) {
     const s = S[d.scope].sort;
     if (s.key === d.sort) s.dir = s.dir === 'asc' ? 'desc' : 'asc'; else { s.key = d.sort; s.dir = 'asc'; }
-    S[d.scope].page = 1; d.scope === 'p' ? renderPeserta() : renderTna(); return;
+    S[d.scope].page = 1; d.scope === 'p' ? renderPeserta() : (d.scope === 't' ? renderTna() : renderRealtime()); return;
   }
 
   switch (d.act) {
@@ -1081,6 +1445,7 @@ document.addEventListener('click', e => {
     case 'demo-off': S.demo = false; S.peserta = []; S.tna = []; hideBanner(); setStatus('idle', 'Belum terhubung'); renderAll(); load(); break;
     case 'p-reset': resetP(); renderPeserta(); break;
     case 't-reset': resetT(); renderTna(); break;
+    case 'r-reset': resetR(); renderRealtime(); break;
     case 'p-view': { const r = S.peserta.find(x => x.row === +d.key); if (r) openPesertaView(r); break; }
     case 'p-edit': case 'p-edit-from-view': { const r = S.peserta.find(x => x.row === +d.key); if (r) openPesertaForm(r); break; }
     case 'p-delete': deletePeserta(); break;
@@ -1104,15 +1469,23 @@ document.addEventListener('click', e => {
       else { S.t.search = a.name; $('#t-search').value = a.name; }
       S.t.mode = 'individu'; renderTna(); break;
     }
+    case 'r-view': { const r = S.realtime.find(x => x.idUjian === d.id); if (r) openRealtimeView(r); break; }
+    case 'r-export-sel': doExport(true); break;
+    case 'r-copy-sel': {
+      const rows = rFiltered().filter(r => S.r.sel.has(r.idUjian));
+      copyText([R_HEAD].concat(rAoa(rows)).map(r => r.join('\t')).join('\n')).then(() => toast(rows.length + ' baris disalin. Tempel ke Excel atau Sheets.'));
+      break;
+    }
   }
 });
 
 document.addEventListener('change', e => {
   const t = e.target;
-  if (t.classList.contains('row-cb')) { toggleSel(t.dataset.scope, t.dataset.key, t.checked); t.dataset.scope === 'p' ? renderPeserta() : renderTna(); return; }
+  if (t.classList.contains('row-cb')) { toggleSel(t.dataset.scope, t.dataset.key, t.checked); t.dataset.scope === 'p' ? renderPeserta() : (t.dataset.scope === 't' ? renderTna() : renderRealtime()); return; }
   if (t.dataset.act === 'p-sel-all') { pFiltered().forEach(r => toggleSel('p', r.row, t.checked)); renderPeserta(); return; }
   if (t.dataset.act === 't-sel-all') { tFiltered().forEach(r => toggleSel('t', r.id, t.checked)); renderTna(); return; }
-  if (t.dataset.per) { const s = S[t.dataset.per]; s.per = +t.value; s.page = 1; t.dataset.per === 'p' ? renderPeserta() : renderTna(); return; }
+  if (t.dataset.act === 'r-sel-all') { rFiltered().forEach(r => toggleSel('r', r.idUjian, t.checked)); renderRealtime(); return; }
+  if (t.dataset.per) { const s = S[t.dataset.per]; s.per = +t.value; s.page = 1; t.dataset.per === 'p' ? renderPeserta() : (t.dataset.per === 't' ? renderTna() : renderRealtime()); return; }
   const pmap = { 'p-company': 'company', 'p-trainer': 'trainer', 'p-course': 'course', 'p-flag': 'flag', 'p-from': 'from', 'p-to': 'to' };
   if (pmap[t.id]) {
     S.p[pmap[t.id]] = t.value; S.p.page = 1;
@@ -1121,6 +1494,12 @@ document.addEventListener('change', e => {
   }
   if (t.id === 't-dept') { S.t.dept = t.value; S.t.page = 1; renderTna(); return; }
   if (t.id === 't-status') { S.t.status = t.value; S.t.page = 1; renderTna(); return; }
+  if (t.id === 'r-status') { S.r.status = t.value; S.r.page = 1; renderRealtime(); return; }
+  if (t.id === 'r-modul') { S.r.modul = t.value; S.r.page = 1; renderRealtime(); return; }
+  if (t.id === 'r-company') { S.r.company = t.value; S.r.page = 1; renderRealtime(); return; }
+  if (t.id === 'r-from' || t.id === 'r-to') {
+    S.r.from = $('#r-from').value; S.r.to = $('#r-to').value; S.r.page = 1; renderRealtime(); return;
+  }
   if (t.id === 'f-tnik') autofillTna(t.form);
   if (t.id === 'f-nik') autofillPeserta(t.form);
 });
@@ -1128,11 +1507,12 @@ document.addEventListener('change', e => {
 let debounce;
 document.addEventListener('input', e => {
   const t = e.target;
-  if (t.id === 'p-search' || t.id === 't-search') {
+  if (t.id === 'p-search' || t.id === 't-search' || t.id === 'r-search') {
     clearTimeout(debounce);
     debounce = setTimeout(() => {
       if (t.id === 'p-search') { S.p.search = t.value; S.p.page = 1; renderPeserta(); }
-      else { S.t.search = t.value; S.t.page = 1; renderTna(); }
+      else if (t.id === 't-search') { S.t.search = t.value; S.t.page = 1; renderTna(); }
+      else if (t.id === 'r-search') { S.r.search = t.value; S.r.page = 1; renderRealtime(); }
     }, 150);
   }
   if (t.form && t.form.id === 'f-tna' && (t.name === 'level' || t.name === 'target')) gapPreview(t.form);
@@ -1146,10 +1526,11 @@ document.addEventListener('submit', e => {
   else if (f.id === 'f-tna') submitTna(f);
 });
 document.addEventListener('keydown', e => { if (e.key === 'Escape' && $('#modal-root').firstChild && !document.querySelector('[data-cf]')) closeModal(); });
-window.addEventListener('hashchange', () => setTab(location.hash === '#tna' ? 'tna' : 'peserta', false));
+window.addEventListener('hashchange', () => { const h = location.hash.replace('#', ''); setTab(['tna', 'realtime'].includes(h) ? h : 'peserta', false); });
 
 /* ---------- mulai ---------- */
-S.tab = location.hash === '#tna' ? 'tna' : 'peserta';
+const initHash = location.hash.replace('#', '');
+S.tab = ['tna', 'realtime'].includes(initHash) ? initHash : 'peserta';
 renderAll();
 // API_URL sudah diatur & tidak perlu PIN — langsung muat data
 load();
