@@ -1,0 +1,1079 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Portal Pelatihan OHS — PT Merdeka Gold Resource</title>
+<link rel="icon" type="image/png" href="Logo-MGR-mark.png">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500;700&display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&display=swap" rel="stylesheet">
+<script src="https://cdn.tailwindcss.com?plugins=forms"></script>
+<script>
+  tailwind.config = {
+    theme: { extend: { fontFamily: { sans: ["Inter", "sans-serif"], mono: ["JetBrains Mono", "monospace"] } } }
+  };
+</script>
+<style>
+  /* Precision Ledger: sudut 0, garis tipis, tanpa bayangan lembut */
+  *, *::before, *::after { border-radius: 0 !important; -webkit-font-smoothing: antialiased; }
+  .num { font-family: "JetBrains Mono", monospace; font-feature-settings: "tnum" 1, "zero" 1; }
+  .material-symbols-outlined { font-size: 16px; line-height: 1; vertical-align: middle; user-select: none; }
+  ::-webkit-scrollbar { height: 7px; width: 7px; }
+  ::-webkit-scrollbar-track { background: #f8fafc; }
+  ::-webkit-scrollbar-thumb { background: #cbd5e1; }
+  ::-webkit-scrollbar-thumb:hover { background: #94a3b8; }
+  th.sortable { cursor: pointer; user-select: none; }
+  th.sortable:hover { background: #f1f5f9; }
+  .keyline { box-shadow: 2px 2px 0 0 rgba(15, 23, 42, .06); }
+  input[type=checkbox] { width: 14px; height: 14px; border-color: #94a3b8; color: #2563eb; }
+  input:focus, select:focus, textarea:focus { outline: 1px solid #2563eb; outline-offset: 0; box-shadow: none !important; border-color: #2563eb !important; }
+  button:focus-visible, a:focus-visible { outline: 2px solid #2563eb; outline-offset: 1px; }
+  .bar { height: 2px; background: linear-gradient(90deg, transparent, #2563eb, transparent); background-size: 200% 100%; animation: bar 1s linear infinite; }
+  @keyframes bar { from { background-position: 200% 0; } to { background-position: -200% 0; } }
+  @media (prefers-reduced-motion: reduce) { .bar { animation: none; } }
+  .scroll-x { overflow-x: auto; }
+  /* Sticky Table Header */
+  #p-table thead th, #t-table thead th { position: sticky; top: 0; z-index: 5; }
+</style>
+</head>
+<body class="bg-slate-50 text-slate-900 font-sans text-xs min-h-screen flex flex-col">
+
+<noscript><div class="p-4 bg-amber-50 text-amber-800 border-b border-amber-200">Halaman ini membutuhkan JavaScript.</div></noscript>
+
+<!-- ===== Header ===== -->
+<header class="w-full bg-white border-b border-slate-300 sticky top-0 z-30">
+  <div class="max-w-[1440px] mx-auto px-4 sm:px-6">
+    <div class="h-16 flex items-center justify-between gap-3">
+      <div class="flex items-center gap-3 min-w-0">
+        <a href="#" class="shrink-0 flex items-center">
+          <img src="Logo-MGR-Long-default.png" alt="PT Merdeka Gold Resource" class="h-8 sm:h-9 w-auto object-contain shrink-0" onerror="this.onerror=null;this.src='Logo-MGR-mark.png';">
+        </a>
+        <div class="h-7 w-px bg-slate-300 hidden sm:block shrink-0"></div>
+        <div class="min-w-0">
+          <h1 id="hdr-title" class="text-sm sm:text-base font-bold leading-tight truncate text-slate-900">Data Peserta Pelatihan</h1>
+          <p id="hdr-sub" class="text-[10px] sm:text-[11px] text-slate-500 truncate">Portal Pelatihan &amp; Induksi OHS</p>
+        </div>
+      </div>
+      <div class="flex items-center gap-2 shrink-0">
+        <button type="button" data-act="refresh" title="Muat ulang dari Google Sheets" class="h-8 w-8 bg-white border border-slate-300 hover:bg-slate-100 hover:border-slate-400 flex items-center justify-center"><span class="material-symbols-outlined">refresh</span></button>
+        <button type="button" data-act="export" class="h-8 px-3 bg-white border border-slate-300 hover:bg-slate-100 hover:border-slate-400 font-semibold flex items-center gap-1.5"><span class="material-symbols-outlined">download</span><span class="hidden sm:inline">Unduh Excel</span></button>
+        <button type="button" data-act="add" class="h-8 px-3 bg-blue-600 hover:bg-blue-700 border border-blue-700 text-white font-semibold flex items-center gap-1.5"><span class="material-symbols-outlined">add</span><span id="add-label">Tambah Peserta</span></button>
+      </div>
+    </div>
+    <nav class="flex items-center gap-7 -mb-px" aria-label="Halaman">
+      <button type="button" data-tab="peserta" class="tab-btn pb-2.5 px-1 border-b-2 font-semibold text-xs">Data Peserta Pelatihan</button>
+      <button type="button" data-tab="tna" class="tab-btn pb-2.5 px-1 border-b-2 font-semibold text-xs">Training Need Analysis (TNA)</button>
+    </nav>
+  </div>
+  <div id="loadbar" class="h-0.5 w-full"></div>
+</header>
+
+<div id="banner" class="hidden"></div>
+
+<main class="flex-1 w-full max-w-[1440px] mx-auto px-4 sm:px-6 py-4 flex flex-col gap-3">
+
+
+
+  <!-- ===================== HALAMAN PESERTA ===================== -->
+  <section id="view-peserta" class="flex flex-col gap-2.5">
+    <div class="bg-white border border-slate-300 p-2.5 sm:p-3 keyline flex flex-col gap-2.5">
+      <div class="flex flex-wrap items-center gap-2">
+        <div class="relative flex-1 min-w-[200px] max-w-sm">
+          <span class="material-symbols-outlined absolute left-2.5 top-1/2 -translate-y-1/2 text-slate-400 pointer-events-none" style="font-size:16px">search</span>
+          <input id="p-search" type="search" placeholder="Cari nama, ID, perusahaan, trainer..." class="w-full h-8 pl-8 pr-2.5 bg-slate-50 border border-slate-300 hover:border-slate-400 focus:bg-white text-xs placeholder:text-slate-400 transition-colors">
+        </div>
+        <select id="p-company" class="h-8 px-2 bg-slate-50 border border-slate-300 hover:border-slate-400 focus:bg-white text-xs max-w-[180px] truncate"><option value="">Semua perusahaan</option></select>
+        <select id="p-trainer" class="h-8 px-2 bg-slate-50 border border-slate-300 hover:border-slate-400 focus:bg-white text-xs max-w-[160px] truncate"><option value="">Semua trainer</option></select>
+        <select id="p-course" class="h-8 px-2 bg-slate-50 border border-slate-300 hover:border-slate-400 focus:bg-white text-xs max-w-[180px] truncate"><option value="">Semua pelatihan</option></select>
+        <div class="flex items-center h-8 border border-slate-300 bg-slate-50 hover:border-slate-400 px-2 gap-1.5 text-slate-600 transition-colors">
+          <span class="material-symbols-outlined text-slate-400" style="font-size:15px">calendar_today</span>
+          <input id="p-from" type="date" title="Tanggal training dari" class="h-6 px-1 text-xs bg-transparent border-0 num">
+          <span class="text-slate-400">–</span>
+          <input id="p-to" type="date" title="Tanggal training sampai" class="h-6 px-1 text-xs bg-transparent border-0 num">
+        </div>
+        <button type="button" data-act="p-reset" class="h-8 px-2.5 bg-white border border-slate-300 hover:bg-slate-100 text-slate-700 font-medium flex items-center gap-1 transition-colors" title="Kembalikan semua filter ke awal"><span class="material-symbols-outlined" style="font-size:15px">restart_alt</span>Reset</button>
+        <div class="ml-auto inline-flex items-center gap-1.5 px-2.5 py-1 bg-slate-100 border border-slate-200 text-slate-600 text-xs font-medium">
+          Total: <span id="p-count" class="num font-bold text-slate-900">0</span><span class="text-slate-400">/</span><span id="p-all" class="num text-slate-600">0</span> data
+          <span id="p-selbadge" class="hidden ml-1.5 px-1.5 py-0.5 bg-blue-600 text-white text-[10px] font-bold num"></span>
+        </div>
+      </div>
+      <div class="flex flex-wrap items-center justify-between gap-2 pt-2 border-t border-slate-200 text-xs">
+        <div class="flex flex-wrap items-center gap-2">
+          <div class="flex items-center gap-1 text-slate-500 font-medium">
+            <span class="material-symbols-outlined text-slate-400" style="font-size:15px">tune</span>
+            <span class="text-[11px] font-semibold uppercase tracking-wider text-slate-500">Preset:</span>
+          </div>
+          <div id="p-quick" class="flex flex-wrap items-center gap-1"></div>
+          <span class="text-slate-300 mx-0.5">|</span>
+          <label for="p-flag" class="text-[11px] font-semibold uppercase tracking-wider text-slate-500">Kualitas:</label>
+          <select id="p-flag" class="h-7 px-2 bg-slate-50 border border-slate-300 hover:border-slate-400 focus:bg-white text-xs">
+            <option value="">Semua data</option>
+            <option value="dup">⚠️ Duplikat</option>
+            <option value="noid">ID kosong</option>
+            <option value="nocompany">Perusahaan kosong</option>
+            <option value="baddate">Tanggal tidak terbaca</option>
+          </select>
+        </div>
+        <div id="p-bulk" class="flex items-center gap-1.5">
+          <span id="p-bulk-label" class="text-[11px] font-medium text-slate-500">Aksi massal:</span>
+          <button type="button" data-act="p-export-sel" class="h-7 px-2.5 bg-white border border-slate-300 hover:bg-slate-100 text-blue-700 font-semibold flex items-center gap-1 transition-colors"><span class="material-symbols-outlined" style="font-size:14px">download</span>Ekspor</button>
+          <button type="button" data-act="p-copy-sel" class="h-7 px-2.5 bg-white border border-slate-300 hover:bg-slate-100 text-slate-700 font-medium flex items-center gap-1 transition-colors"><span class="material-symbols-outlined" style="font-size:14px">content_copy</span>Salin</button>
+        </div>
+      </div>
+    </div>
+
+    <div class="bg-white border border-slate-300 keyline overflow-hidden">
+      <div id="p-table" class="scroll-x max-h-[640px] overflow-auto"></div>
+      <div id="p-foot" class="border-t border-slate-200 px-3 py-2 flex flex-wrap items-center justify-between gap-3 text-slate-600 bg-slate-50/70 text-xs"></div>
+    </div>
+  </section>
+
+  <!-- ===================== HALAMAN TNA ===================== -->
+  <section id="view-tna" class="hidden flex flex-col gap-2.5">
+    <div class="bg-white border border-slate-300 p-2.5 sm:p-3 keyline flex flex-col gap-2.5">
+      <div class="flex flex-col md:flex-row md:items-center justify-between gap-2 pb-2.5 border-b border-slate-200">
+        <div id="t-modes" class="flex items-center gap-1 overflow-x-auto">
+          <button type="button" data-mode="individu" class="mode-btn h-7 px-3 border font-semibold text-[11px] flex items-center gap-1.5 whitespace-nowrap"><span class="material-symbols-outlined" style="font-size:14px">person</span>Per individu</button>
+          <button type="button" data-mode="dept" class="mode-btn h-7 px-3 border font-semibold text-[11px] flex items-center gap-1.5 whitespace-nowrap"><span class="material-symbols-outlined" style="font-size:14px">corporate_fare</span>Per departemen</button>
+          <button type="button" data-mode="pelatihan" class="mode-btn h-7 px-3 border font-semibold text-[11px] flex items-center gap-1.5 whitespace-nowrap"><span class="material-symbols-outlined" style="font-size:14px">school</span>Per pelatihan</button>
+        </div>
+        <div class="inline-flex items-center gap-1.5 px-2.5 py-1 bg-slate-100 border border-slate-200 text-slate-600 text-xs font-medium">
+          Total: <span id="t-count" class="num font-bold text-slate-900">0</span><span class="text-slate-400">/</span><span id="t-all" class="num text-slate-600">0</span> data
+          <span id="t-selbadge" class="hidden ml-1.5 px-1.5 py-0.5 bg-blue-600 text-white text-[10px] font-bold num"></span>
+        </div>
+      </div>
+      <div class="flex flex-wrap items-center gap-2">
+        <div class="relative flex-1 min-w-[200px] max-w-md">
+          <span class="material-symbols-outlined absolute left-2.5 top-1/2 -translate-y-1/2 text-slate-400 pointer-events-none" style="font-size:16px">search</span>
+          <input id="t-search" type="search" placeholder="Cari NIK, nama, jabatan, departemen, atau pelatihan..." class="w-full h-8 pl-8 pr-2.5 bg-slate-50 border border-slate-300 hover:border-slate-400 focus:bg-white text-xs placeholder:text-slate-400 transition-colors">
+        </div>
+        <select id="t-dept" class="h-8 px-2 bg-slate-50 border border-slate-300 hover:border-slate-400 focus:bg-white text-xs max-w-[220px] truncate"><option value="">Semua departemen</option></select>
+        <select id="t-status" class="h-8 px-2 bg-slate-50 border border-slate-300 hover:border-slate-400 focus:bg-white text-xs w-36">
+          <option value="">Semua status</option><option>Disetujui</option><option>Tertunda</option><option>Ditolak</option>
+        </select>
+        <button type="button" data-act="t-reset" class="h-8 px-2.5 bg-white border border-slate-300 hover:bg-slate-100 text-slate-700 font-medium flex items-center gap-1 transition-colors" title="Kembalikan semua filter ke awal"><span class="material-symbols-outlined" style="font-size:15px">restart_alt</span>Reset</button>
+      </div>
+      <div class="flex flex-wrap items-center justify-between gap-2 pt-2 border-t border-slate-200 text-xs">
+        <div class="flex flex-wrap items-center gap-2">
+          <span class="text-[11px] font-semibold uppercase tracking-wider text-slate-500">Preset:</span>
+          <div id="t-presets" class="flex flex-wrap items-center gap-1"></div>
+        </div>
+        <div id="t-bulk" class="flex items-center gap-1.5 ml-auto">
+          <span id="t-bulk-label" class="text-[11px] font-medium text-slate-500">Aksi massal:</span>
+          <button type="button" data-act="t-export-sel" class="h-7 px-2.5 bg-white border border-slate-300 hover:bg-slate-100 text-blue-700 font-semibold flex items-center gap-1 transition-colors"><span class="material-symbols-outlined" style="font-size:14px">download</span>Ekspor</button>
+          <button type="button" data-act="t-approve-sel" class="h-7 px-2.5 bg-white border border-slate-300 hover:bg-slate-100 text-green-800 font-semibold flex items-center gap-1 transition-colors"><span class="material-symbols-outlined" style="font-size:14px">check</span>Setujui</button>
+        </div>
+      </div>
+    </div>
+
+    <div class="bg-white border border-slate-300 keyline overflow-hidden">
+      <div id="t-table" class="scroll-x max-h-[640px] overflow-auto"></div>
+      <div id="t-foot" class="border-t border-slate-200 px-3 py-2 flex flex-wrap items-center justify-between gap-3 text-slate-600 bg-slate-50/70 text-xs"></div>
+    </div>
+  </section>
+</main>
+
+<footer class="w-full bg-white border-t border-slate-300 py-3 px-4 sm:px-6 mt-auto">
+  <div class="max-w-[1440px] mx-auto flex flex-wrap items-center justify-between gap-3 text-slate-500">
+    <div class="flex items-center gap-2.5">
+      <img src="Logo-MGR-mark.png" alt="MGR Mark" class="h-5 w-auto object-contain">
+      <span><strong>PT Merdeka Gold Resource</strong> — Portal Pelatihan &amp; Induksi OHS (Cross Department)</span>
+    </div>
+    <div class="flex items-center gap-4">
+      <div class="flex items-center gap-2 opacity-80">
+        <img src="ambassador-1.webp" alt="Ambassador 1" class="h-5 w-auto object-contain">
+        <img src="ambassador-2.webp" alt="Ambassador 2" class="h-5 w-auto object-contain">
+      </div>
+      <span class="text-slate-300">|</span>
+      <span class="flex items-center gap-2"><span id="st-dot" class="inline-block w-2 h-2 bg-slate-400"></span><span id="st-text">Belum terhubung</span></span>
+    </div>
+  </div>
+</footer>
+
+<div id="modal-root"></div>
+<div id="toast-root" class="fixed bottom-4 right-4 z-[70] flex flex-col gap-2 items-end"></div>
+
+<script>
+(function () {
+'use strict';
+
+/* =====================================================================
+ *  PENGATURAN
+ *  Tempel URL Web App Google Apps Script (berakhiran /exec) di bawah ini,
+ *  ATAU kosongkan dan isi lewat ikon Pengaturan di halaman (disimpan di
+ *  browser masing-masing pengguna).
+ * ===================================================================== */
+const API_URL = 'https://script.google.com/macros/s/AKfycbwYLZugYZS5olqRRM0LepiVYctcopnwzysaRJJgIBVewMVfRDTEotUSpzzXO_TI93lR/exec';
+
+const XLSX_URL = 'https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js';
+const DEPT_DEFAULT = ['TI & Rekayasa Perangkat Lunak', 'Human Capital & Organisasi', 'Keuangan & Manajemen Risiko', 'Operasional & Logistik', 'Pemasaran & Komunikasi', 'Riset & Pengembangan Bisnis'];
+const METODE_DEFAULT = ['Asesmen 360° + Uji Teknis', 'Uji Kompetensi', 'Observasi Atasan', 'Wawancara Perilaku'];
+const FORMAT_DEFAULT = ['Intensive Bootcamp (40 Jam)', 'Workshop (16 Jam)', 'Kelas Reguler', 'E-Learning', 'On the Job Training'];
+const MONTHS = ['Jan', 'Feb', 'Mar', 'Apr', 'Mei', 'Jun', 'Jul', 'Agu', 'Sep', 'Okt', 'Nov', 'Des'];
+
+/* ---------- helper umum ---------- */
+const $ = (s, r) => (r || document).querySelector(s);
+const $$ = (s, r) => Array.from((r || document).querySelectorAll(s));
+const esc = s => String(s == null ? '' : s).replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
+const nn = s => String(s == null ? '' : s).toLowerCase().replace(/\s+/g, ' ').trim();
+const pad2 = n => String(n).padStart(2, '0');
+const isoOf = d => d.getFullYear() + '-' + pad2(d.getMonth() + 1) + '-' + pad2(d.getDate());
+const todayIso = () => isoOf(new Date());
+const addDays = (d, n) => { const x = new Date(d); x.setDate(x.getDate() + n); return x; };
+const fmtDate = iso => { const m = /^(\d{4})-(\d{2})-(\d{2})$/.exec(iso || ''); return m ? m[3] + ' ' + MONTHS[+m[2] - 1] + ' ' + m[1] : ''; };
+const dmy = iso => { const m = /^(\d{4})-(\d{2})-(\d{2})$/.exec(iso || ''); return m ? m[3] + '/' + m[2] + '/' + m[1] : ''; };
+const rupiah = n => (n == null || n === '' || isNaN(n)) ? '—' : 'Rp ' + Number(n).toLocaleString('id-ID');
+const uniq = arr => Array.from(new Set(arr.filter(Boolean)));
+const sortedUniq = arr => uniq(arr).sort((a, b) => a.localeCompare(b, 'id'));
+const LS = {
+  get(k) { try { return localStorage.getItem(k) || ''; } catch (e) { return ''; } },
+  set(k, v) { try { localStorage.setItem(k, v); } catch (e) { /* diabaikan */ } }
+};
+const cfg = () => ({ url: (LS.get('portal.apiUrl') || API_URL).trim() });
+
+/* ---------- state ---------- */
+const S = {
+  tab: 'peserta', demo: false, loading: false, synced: null,
+  peserta: [], tna: [],
+  p: { search: '', company: '', trainer: '', course: '', from: '', to: '', quick: 'all', flag: '', sort: { key: 'tanggal', dir: 'desc' }, page: 1, per: 25, sel: new Set() },
+  t: { mode: 'individu', search: '', dept: '', status: '', preset: '', sort: { key: 'gap', dir: 'asc' }, page: 1, per: 25, sel: new Set(), agg: [] }
+};
+
+/* ---------- API ke Google Apps Script ---------- */
+async function api(action, payload) {
+  if (S.demo) return demoApi(action, payload || {});
+  const c = cfg();
+  if (!c.url) { const e = new Error('URL Web App belum diatur.'); e.code = 'NOCFG'; throw e; }
+  let res;
+  try {
+    // Body berupa teks biasa -> "simple request", tidak memicu preflight CORS.
+    res = await fetch(c.url, { method: 'POST', redirect: 'follow', body: JSON.stringify(Object.assign({ action: action }, payload || {})) });
+  } catch (err) {
+    throw new Error('Tidak bisa terhubung ke Google Apps Script. Periksa URL Web App dan koneksi internet.');
+  }
+  let json;
+  try { json = await res.json(); } catch (err) {
+    throw new Error('Respon server tidak valid. Pastikan deployment diatur "Who has access: Anyone" dan URL berakhiran /exec.');
+  }
+  if (!json.ok) { const e = new Error(json.error || 'Terjadi kesalahan di server.'); e.code = json.code; throw e; }
+  return json.data;
+}
+
+/* ---------- mode demo (data fiktif, hanya di memori) ---------- */
+const DEMO = { p: [], t: [] };
+function demoInit() {
+  const trainers = ['Trainer A', 'Trainer B', 'Trainer C'];
+  const comps = ['PT Contoh Maju Sejahtera', 'PT Demo Tambang Bersama', 'PT Sampel Karya'];
+  const names = ['Andi Contoh', 'Budi Demo', 'Citra Sampel', 'Dewi Uji', 'Eko Latih', 'Fajar Model', 'Gita Simulasi', 'Hadi Percobaan', 'Indah Fiktif', 'Joko Ilustrasi', 'Kiki Contoh', 'Lina Demo'];
+  const now = new Date();
+  DEMO.p = names.map((n, i) => ({
+    timestamp: '', nik: i === 3 ? '' : (i % 2 ? 'DEMO-26' + pad2(i) + '0' : 'SMP-26' + pad2(i) + '0'),
+    nama: n, company: i === 5 ? '' : comps[i % 3], trainer: trainers[i % 3],
+    tanggal: isoOf(addDays(now, -i * 3)), tanggalRaw: '', pelatihan: i % 4 === 0 ? 'Induksi Area Specific' : ''
+  }));
+  DEMO.p.push(Object.assign({}, DEMO.p[1]));
+  DEMO.t = [
+    { id: 'TNA-DEMO0001', nik: DEMO.p[0].nik, nama: DEMO.p[0].nama, dept: DEPT_DEFAULT[0], jabatan: 'Lead Backend Architect', level: 2, target: 5, gap: -3, rekomendasi: 'Adv. Microservices & Architecture', prioritas: 'Tinggi', status: 'Disetujui', metode: METODE_DEFAULT[0], format: FORMAT_DEFAULT[0], estimasi: 12500000 },
+    { id: 'TNA-DEMO0002', nik: DEMO.p[1].nik, nama: DEMO.p[1].nama, dept: DEPT_DEFAULT[1], jabatan: 'Senior People Development Spec.', level: 3, target: 4, gap: -1, rekomendasi: 'People Analytics & Workforce Planning', prioritas: 'Sedang', status: 'Tertunda', metode: METODE_DEFAULT[1], format: FORMAT_DEFAULT[1], estimasi: 6000000 },
+    { id: 'TNA-DEMO0003', nik: DEMO.p[2].nik, nama: DEMO.p[2].nama, dept: DEPT_DEFAULT[2], jabatan: 'Financial Risk Analyst', level: 2, target: 4, gap: -2, rekomendasi: 'Adv. Financial Modeling & Stress Testing', prioritas: 'Tinggi', status: 'Tertunda', metode: METODE_DEFAULT[0], format: FORMAT_DEFAULT[0], estimasi: 9500000 },
+    { id: 'TNA-DEMO0004', nik: 'DEMO-9999', nama: 'Mega Uji', dept: DEPT_DEFAULT[3], jabatan: 'Fleet & Dispatch Supervisor', level: 4, target: 4, gap: 0, rekomendasi: 'Fleet Telematics & Route Optimization', prioritas: 'Rutin', status: 'Ditolak', metode: '', format: '', estimasi: 0 }
+  ].map(r => Object.assign({ timestamp: '', updated: '' }, r));
+}
+function demoApi(action, payload) {
+  return new Promise((resolve, reject) => {
+    setTimeout(() => {
+      try { resolve(demoRun(action, payload)); } catch (e) { reject(e); }
+    }, 250);
+  });
+}
+function demoSnapP() {
+  return DEMO.p.map((r, i) => Object.assign({}, r, { row: i + 2, fp: [r.nik, r.nama, r.company, r.trainer, r.tanggal, r.pelatihan].join('|') }));
+}
+function demoSnapT() { return DEMO.t.map((r, i) => Object.assign({}, r, { row: i + 2 })); }
+function demoRun(action, p) {
+  const d = p.data || {};
+  switch (action) {
+    case 'bootstrap': return { peserta: demoSnapP(), tna: demoSnapT(), meta: {} };
+    case 'peserta.add': DEMO.p.push({ timestamp: new Date().toISOString().slice(0, 16).replace('T', ' '), nik: d.nik || '', nama: d.nama, company: d.company || '', trainer: d.trainer || '', tanggal: d.tanggal, tanggalRaw: '', pelatihan: d.pelatihan || '' }); return { peserta: demoSnapP() };
+    case 'peserta.update': { const r = DEMO.p[d.row - 2]; if (!r) throw new Error('Baris tidak ditemukan.'); Object.assign(r, { nik: d.nik || '', nama: d.nama, company: d.company || '', trainer: d.trainer || '', tanggal: d.tanggal, tanggalRaw: '', pelatihan: d.pelatihan || '' }); return { peserta: demoSnapP() }; }
+    case 'peserta.delete': DEMO.p.splice(d.row - 2, 1); return { peserta: demoSnapP() };
+    case 'tna.add': DEMO.t.push(Object.assign({ id: 'TNA-DEMO' + Math.random().toString(16).slice(2, 6).toUpperCase(), timestamp: '', updated: '' }, d, { gap: Math.min(0, d.level - d.target) })); return { tna: demoSnapT() };
+    case 'tna.update': { const r = DEMO.t.find(x => x.id === d.id); if (!r) throw new Error('Data TNA tidak ditemukan.'); Object.assign(r, d, { gap: Math.min(0, d.level - d.target) }); return { tna: demoSnapT() }; }
+    case 'tna.status': { const r = DEMO.t.find(x => x.id === d.id); if (r) r.status = d.status; return { tna: demoSnapT() }; }
+    case 'tna.delete': DEMO.t = DEMO.t.filter(x => x.id !== d.id); return { tna: demoSnapT() };
+    default: throw new Error('Aksi tidak dikenal.');
+  }
+}
+
+/* ---------- persiapan data setelah dimuat ---------- */
+function prep() {
+  const cnt = new Map();
+  S.peserta.forEach(r => {
+    r._k = (r.nik || r.nama).toLowerCase() + '|' + r.tanggal + '|' + (r.trainer || '').toLowerCase();
+    cnt.set(r._k, (cnt.get(r._k) || 0) + 1);
+  });
+  S.peserta.forEach(r => {
+    r._dup = cnt.get(r._k) > 1;
+    r._noid = !r.nik;
+    r._nocomp = !r.company;
+    r._baddate = !r.tanggal;
+    r._hay = [r.nik, r.nama, r.company, r.trainer, r.pelatihan].join(' ').toLowerCase();
+  });
+  S.tna.forEach(r => {
+    r._hay = [r.nik, r.nama, r.dept, r.jabatan, r.rekomendasi, r.id].join(' ').toLowerCase();
+  });
+  // buang pilihan yang barisnya sudah tidak ada
+  const rows = new Set(S.peserta.map(r => r.row));
+  S.p.sel = new Set(Array.from(S.p.sel).filter(k => rows.has(k)));
+  const ids = new Set(S.tna.map(r => r.id));
+  S.t.sel = new Set(Array.from(S.t.sel).filter(k => ids.has(k)));
+  fillFilters();
+}
+
+function fillSelect(el, values, placeholder) {
+  const cur = el.value;
+  el.innerHTML = '<option value="">' + esc(placeholder) + '</option>' + values.map(v => '<option value="' + esc(v) + '">' + esc(v) + '</option>').join('');
+  el.value = values.indexOf(cur) >= 0 ? cur : '';
+}
+function fillFilters() {
+  fillSelect($('#p-company'), sortedUniq(S.peserta.map(r => r.company)), 'Semua perusahaan');
+  fillSelect($('#p-trainer'), sortedUniq(S.peserta.map(r => r.trainer)), 'Semua trainer');
+  const courses = sortedUniq(S.peserta.map(r => r.pelatihan));
+  fillSelect($('#p-course'), courses, courses.length ? 'Semua pelatihan' : 'Belum ada nama pelatihan');
+  $('#p-course').disabled = !courses.length;
+  S.p.company = $('#p-company').value; S.p.trainer = $('#p-trainer').value; S.p.course = $('#p-course').value;
+  fillSelect($('#t-dept'), sortedUniq(DEPT_DEFAULT.concat(S.tna.map(r => r.dept))), 'Semua departemen');
+  S.t.dept = $('#t-dept').value;
+}
+
+/* ---------- koneksi, status, banner, toast ---------- */
+function setStatus(kind, text) {
+  const dot = $('#st-dot');
+  dot.className = 'inline-block w-2 h-2 ' + ({ ok: 'bg-green-600', loading: 'bg-amber-500', error: 'bg-red-600', demo: 'bg-blue-600' }[kind] || 'bg-slate-400');
+  $('#st-text').textContent = text;
+}
+function showBar(on) { $('#loadbar').className = 'h-0.5 w-full' + (on ? ' bar' : ''); }
+function showBanner(msg, actions) {
+  const b = $('#banner');
+  b.className = 'bg-red-50 border-b border-red-200 text-red-800';
+  b.innerHTML = '<div class="max-w-[1440px] mx-auto px-4 sm:px-6 py-2 flex flex-wrap items-center gap-3"><span class="material-symbols-outlined">error</span><span class="flex-1 min-w-[200px]">' + esc(msg) + '</span>' +
+    (actions || []).map(a => '<button type="button" data-act="' + a.act + '" class="h-7 px-2.5 bg-white border border-red-300 hover:bg-red-100 font-semibold">' + esc(a.label) + '</button>').join('') + '</div>';
+}
+function hideBanner() { const b = $('#banner'); b.className = 'hidden'; b.innerHTML = ''; }
+function toast(msg, kind) {
+  const el = document.createElement('div');
+  const tone = kind === 'error' ? 'border-red-300 bg-red-50 text-red-800' : 'border-slate-900 bg-white text-slate-900';
+  el.className = 'keyline border px-3 py-2 max-w-sm font-medium ' + tone;
+  el.setAttribute('role', 'status');
+  el.textContent = msg;
+  $('#toast-root').appendChild(el);
+  setTimeout(() => el.remove(), kind === 'error' ? 6000 : 3000);
+}
+function handleError(e) {
+  setStatus('error', 'Gagal terhubung');
+  showBanner(e.message, [{ act: 'refresh', label: 'Coba lagi' }]);
+}
+
+async function load() {
+  S.loading = true; showBar(true); setStatus('loading', 'Memuat data…'); renderAll();
+  try {
+    const d = await api('bootstrap');
+    S.peserta = d.peserta || []; S.tna = d.tna || [];
+    prep(); S.synced = new Date(); hideBanner();
+    setStatus(S.demo ? 'demo' : 'ok', (S.demo ? 'Mode demo (data fiktif)' : 'Terhubung & sinkron') + ' · ' + pad2(S.synced.getHours()) + '.' + pad2(S.synced.getMinutes()));
+  } catch (e) { handleError(e); }
+  finally { S.loading = false; showBar(false); renderAll(); }
+}
+
+/** Jalankan aksi tulis; server mengembalikan snapshot terbaru dari sheet yang berubah. */
+async function mutate(action, data, okMsg) {
+  showBar(true);
+  try {
+    const d = await api(action, { data: data });
+    if (d.peserta) { S.peserta = d.peserta; S.p.sel.clear(); }
+    if (d.tna) { S.tna = d.tna; S.t.sel.clear(); }
+    prep(); renderAll(); hideBanner();
+    if (okMsg) toast(okMsg);
+    return true;
+  } finally { showBar(false); }
+}
+
+/* ---------- relasi antar halaman ---------- */
+function pesertaOf(nik, nama) {
+  const a = nn(nik), b = nn(nama);
+  return S.peserta.filter(p => (a && nn(p.nik) === a) || (b && nn(p.nama) === b));
+}
+function tnaOf(nik, nama) {
+  const a = nn(nik), b = nn(nama);
+  return S.tna.filter(t => (a && nn(t.nik) === a) || (b && nn(t.nama) === b));
+}
+
+/* =====================================================================
+ *  TAMPILAN BERSAMA: sortir, pager
+ * ===================================================================== */
+function cmp(a, b, dir) {
+  const ea = a === '' || a == null, eb = b === '' || b == null;
+  if (ea && eb) return 0;
+  if (ea) return 1;          // kosong selalu di bawah
+  if (eb) return -1;
+  const r = (typeof a === 'number' && typeof b === 'number') ? a - b : String(a).localeCompare(String(b), 'id', { numeric: true });
+  return dir === 'asc' ? r : -r;
+}
+function sortRows(rows, sort) {
+  return rows.slice().sort((x, y) => cmp(x[sort.key], y[sort.key], sort.dir));
+}
+function sortHead(scope, cols, sort) {
+  return cols.map(c => {
+    const on = sort.key === c.k;
+    const ic = on ? (sort.dir === 'asc' ? 'arrow_upward' : 'arrow_downward') : '';
+    return '<th class="sortable px-3 border-r border-slate-200 whitespace-nowrap ' + (c.cls || '') + '" data-sort="' + c.k + '" data-scope="' + scope + '" aria-sort="' + (on ? (sort.dir === 'asc' ? 'ascending' : 'descending') : 'none') + '">' +
+      '<span class="inline-flex items-center gap-1">' + esc(c.t) + (ic ? '<span class="material-symbols-outlined text-blue-600" style="font-size:13px">' + ic + '</span>' : '') + '</span></th>';
+  }).join('');
+}
+function pagerHtml(scope, total, page, per) {
+  const pages = Math.max(1, Math.ceil(total / per));
+  const items = [];
+  if (pages <= 7) { for (let i = 1; i <= pages; i++) items.push(i); }
+  else {
+    items.push(1);
+    if (page > 3) items.push('…');
+    for (let i = Math.max(2, page - 1); i <= Math.min(pages - 1, page + 1); i++) items.push(i);
+    if (page < pages - 2) items.push('…');
+    items.push(pages);
+  }
+  const b = 'px-2.5 h-7 border-r border-slate-300 ';
+  return '<div class="flex items-center border border-slate-300 bg-white">' +
+    '<button type="button" data-pg="' + (page - 1) + '" data-scope="' + scope + '" class="' + b + 'hover:bg-slate-100 disabled:opacity-40 disabled:hover:bg-white" ' + (page <= 1 ? 'disabled' : '') + '>‹ Sebelumnya</button>' +
+    items.map(i => i === '…'
+      ? '<span class="' + b + 'text-slate-400 inline-flex items-center">…</span>'
+      : '<button type="button" data-pg="' + i + '" data-scope="' + scope + '" class="' + b + 'num ' + (i === page ? 'bg-blue-600 text-white font-bold' : 'hover:bg-slate-100') + '" ' + (i === page ? 'aria-current="page"' : '') + '>' + i + '</button>').join('') +
+    '<button type="button" data-pg="' + (page + 1) + '" data-scope="' + scope + '" class="px-2.5 h-7 hover:bg-slate-100 disabled:opacity-40 disabled:hover:bg-white" ' + (page >= pages ? 'disabled' : '') + '>Berikutnya ›</button></div>';
+}
+function footHtml(scope, total, page, per) {
+  const from = total ? (page - 1) * per + 1 : 0, to = Math.min(total, page * per);
+  return '<div class="flex items-center gap-4 flex-wrap"><div>Menampilkan <span class="num font-semibold text-slate-900">' + from + ' – ' + to + '</span> dari <span class="num font-semibold text-slate-900">' + total + '</span> data</div>' +
+    '<label class="flex items-center gap-1.5 border-l border-slate-200 pl-4 text-slate-500">Tampilkan <select data-per="' + scope + '" class="h-7 px-2 bg-white border border-slate-300 text-xs">' +
+    [10, 25, 50, 100].map(n => '<option value="' + n + '"' + (n === per ? ' selected' : '') + '>' + n + '</option>').join('') + '</select> per halaman</label></div>' + pagerHtml(scope, total, page, per);
+}
+function emptyRow(cols, text, icon) {
+  return '<tr><td colspan="' + cols + '" class="py-14 text-center text-slate-500"><span class="material-symbols-outlined block mx-auto mb-2 text-slate-400" style="font-size:28px">' + (icon || 'inbox') + '</span>' + text + '</td></tr>';
+}
+const TH_ROW = 'h-8 bg-slate-50 text-[11px] font-bold uppercase tracking-[0.06em] text-slate-600 border-b-2 border-slate-300 select-none';
+const TD = 'px-3 py-1.5 border-r border-slate-100 whitespace-nowrap';
+const BADGE = 'inline-block px-1.5 border text-[10px] font-bold num whitespace-nowrap ';
+const B_WARN = BADGE + 'bg-amber-50 text-amber-700 border-amber-200';
+const B_OK = BADGE + 'bg-green-50 text-green-800 border-green-200';
+const B_NEU = BADGE + 'bg-slate-100 text-slate-700 border-slate-300';
+const B_BAD = BADGE + 'bg-red-50 text-red-800 border-red-200';
+function statusBadge(s) { return '<span class="' + (s === 'Disetujui' ? B_OK : s === 'Ditolak' ? B_BAD : B_WARN) + '">' + esc(s).toUpperCase() + '</span>'; }
+function gapBadge(g) {
+  if (g == null) return '<span class="text-slate-400">—</span>';
+  if (g === 0) return '<span class="' + B_NEU + '">0 Level (Optimal)</span>';
+  return '<span class="' + (g <= -2 ? B_BAD : B_WARN) + '">' + g + ' Level</span>';
+}
+
+/* =====================================================================
+ *  HALAMAN PESERTA
+ * ===================================================================== */
+const P_COLS = [
+  { k: 'nik', t: 'ID Karyawan' }, { k: 'nama', t: 'Nama Karyawan' },
+  { k: 'company', t: 'Perusahaan' }, { k: 'pelatihan', t: 'Nama Pelatihan' }, { k: 'trainer', t: 'Nama Trainer' }, { k: 'tanggal', t: 'Tanggal Training' }
+];
+const QUICK = [['all', 'Semua tanggal'], ['today', 'Hari ini'], ['7', '7 hari terakhir'], ['30', '30 hari terakhir'], ['month', 'Bulan ini']];
+
+function pFiltered() {
+  const f = S.p, q = f.search.trim().toLowerCase();
+  const rows = S.peserta.filter(r => {
+    if (q && r._hay.indexOf(q) < 0) return false;
+    if (f.company && r.company !== f.company) return false;
+    if (f.trainer && r.trainer !== f.trainer) return false;
+    if (f.course && r.pelatihan !== f.course) return false;
+    if (f.from && (!r.tanggal || r.tanggal < f.from)) return false;
+    if (f.to && (!r.tanggal || r.tanggal > f.to)) return false;
+    if (f.flag === 'dup' && !r._dup) return false;
+    if (f.flag === 'noid' && !r._noid) return false;
+    if (f.flag === 'nocompany' && !r._nocomp) return false;
+    if (f.flag === 'baddate' && !r._baddate) return false;
+    return true;
+  });
+  return sortRows(rows, f.sort);
+}
+function setQuick(id) {
+  const t = new Date(); let from = '', to = '';
+  if (id === 'today') { from = to = isoOf(t); }
+  else if (id === '7') { from = isoOf(addDays(t, -6)); to = isoOf(t); }
+  else if (id === '30') { from = isoOf(addDays(t, -29)); to = isoOf(t); }
+  else if (id === 'month') { from = isoOf(new Date(t.getFullYear(), t.getMonth(), 1)); to = isoOf(t); }
+  S.p.quick = id; S.p.from = from; S.p.to = to; S.p.page = 1;
+  $('#p-from').value = from; $('#p-to').value = to;
+}
+
+function renderPeserta() {
+  const f = S.p, rows = pFiltered(), total = rows.length;
+  const pages = Math.max(1, Math.ceil(total / f.per));
+  if (f.page > pages) f.page = pages;
+  const slice = rows.slice((f.page - 1) * f.per, f.page * f.per);
+
+  $('#p-count').textContent = total;
+  $('#p-all').textContent = S.peserta.length;
+  const n = f.sel.size;
+  const badge = $('#p-selbadge');
+  badge.classList.toggle('hidden', !n); badge.textContent = n + ' terpilih';
+  $('#p-bulk-label').textContent = 'Aksi massal (' + n + ' baris):';
+  $$('#p-bulk button').forEach(b => { b.disabled = !n; b.classList.toggle('opacity-40', !n); });
+
+  $('#p-quick').innerHTML = QUICK.map(q => {
+    const on = f.quick === q[0];
+    return '<button type="button" data-quick="' + q[0] + '" class="h-7 px-2.5 border font-medium flex items-center gap-1 ' + (on ? 'bg-slate-100 border-blue-600 text-blue-700 font-semibold' : 'bg-white border-slate-300 hover:bg-slate-100 text-slate-800') + '">' + (on ? '<span class="material-symbols-outlined" style="font-size:14px">check</span>' : '') + q[1] + '</button>';
+  }).join('');
+
+  const allSel = total > 0 && rows.every(r => f.sel.has(r.row));
+  let body;
+  if (S.loading && !S.peserta.length) body = emptyRow(10, 'Memuat data dari Google Sheets…', 'sync');
+  else if (!S.peserta.length) body = emptyRow(10, 'Belum ada data peserta. Klik <b>Tambah Peserta</b> untuk mulai mencatat.', 'group_add');
+  else if (!total) body = emptyRow(10, 'Tidak ada data yang cocok dengan filter. Ubah atau reset filter.', 'filter_alt_off');
+  else body = slice.map((r, i) => {
+    const sel = f.sel.has(r.row);
+    const tags = (r._dup ? ' <span class="' + B_WARN + '" title="Nama, tanggal, dan trainer sama dengan baris lain">DUPLIKAT</span>' : '');
+    return '<tr class="border-b border-slate-200 ' + (sel ? 'bg-blue-50' : 'hover:bg-slate-50') + '">' +
+      '<td class="w-10 text-center border-r border-slate-100"><input type="checkbox" class="row-cb" data-scope="p" data-key="' + r.row + '" aria-label="Pilih baris ' + r.row + '"' + (sel ? ' checked' : '') + '></td>' +
+      '<td class="' + TD + ' num text-slate-500 text-center">' + ((f.page - 1) * f.per + i + 1) + '</td>' +
+      '<td class="' + TD + ' num font-medium text-blue-600">' + (esc(r.nik) || '<span class="text-slate-300" title="ID karyawan kosong">—</span>') + '</td>' +
+      '<td class="' + TD + ' font-semibold">' + esc(r.nama) + tags + '</td>' +
+      '<td class="' + TD + ' text-slate-600">' + (esc(r.company) || '<span class="text-slate-300">—</span>') + '</td>' +
+      '<td class="' + TD + '">' + (esc(r.pelatihan) || '<span class="text-slate-300">—</span>') + '</td>' +
+      '<td class="' + TD + '">' + (esc(r.trainer) || '<span class="text-slate-300">—</span>') + '</td>' +
+      '<td class="' + TD + ' num text-slate-600">' + (r.tanggal ? fmtDate(r.tanggal) : (r.tanggalRaw ? '<span class="' + B_WARN + '" title="Format tanggal di sheet tidak terbaca">' + esc(r.tanggalRaw) + '</span>' : '<span class="text-slate-300">—</span>')) + '</td>' +
+      '<td class="px-3 text-center whitespace-nowrap"><div class="inline-flex gap-1">' +
+        '<button type="button" data-act="p-view" data-key="' + r.row + '" class="px-2 h-6 border border-slate-300 bg-white hover:bg-slate-100 text-blue-700 font-medium">Lihat</button>' +
+        '<button type="button" data-act="p-edit" data-key="' + r.row + '" class="px-2 h-6 border border-slate-300 bg-white hover:bg-slate-100 text-slate-600 font-medium">Edit</button></div></td></tr>';
+  }).join('');
+
+  $('#p-table').innerHTML = '<table class="w-full border-collapse text-left min-w-[1100px]"><thead><tr class="' + TH_ROW + '">' +
+    '<th class="w-10 text-center border-r border-slate-200"><input type="checkbox" data-act="p-sel-all" aria-label="Pilih semua hasil filter" title="Pilih semua hasil filter"' + (allSel ? ' checked' : '') + '></th>' +
+    '<th class="w-12 text-center border-r border-slate-200">No</th>' + sortHead('p', P_COLS, f.sort) + '<th class="w-28 px-3 text-center">Aksi</th></tr></thead><tbody>' + body + '</tbody></table>';
+  $('#p-foot').innerHTML = footHtml('p', total, f.page, f.per);
+}
+
+/* =====================================================================
+ *  HALAMAN TNA
+ * ===================================================================== */
+const T_COLS = [
+  { k: 'nik', t: 'NIK / ID Karyawan' }, { k: 'nama', t: 'Nama Karyawan' }, { k: 'dept', t: 'Departemen / Unit' }, { k: 'jabatan', t: 'Jabatan' },
+  { k: 'level', t: 'Kompetensi Saat Ini' }, { k: 'gap', t: 'Gap Kompetensi' }, { k: 'rekomendasi', t: 'Rekomendasi Pelatihan' }, { k: 'status', t: 'Status' }
+];
+const T_PRESETS = [['kritis', 'Gap kritis (-2/-3)'], ['tinggi', 'Prioritas tinggi'], ['tertunda', 'Menunggu persetujuan']];
+
+function tFiltered() {
+  const f = S.t, q = f.search.trim().toLowerCase();
+  return S.tna.filter(r => {
+    if (q && r._hay.indexOf(q) < 0) return false;
+    if (f.dept && r.dept !== f.dept) return false;
+    if (f.status && r.status !== f.status) return false;
+    if (f.preset === 'kritis' && !(r.gap != null && r.gap <= -2)) return false;
+    if (f.preset === 'tinggi' && r.prioritas !== 'Tinggi') return false;
+    if (f.preset === 'tertunda' && r.status !== 'Tertunda') return false;
+    return true;
+  });
+}
+function aggregate(rows, keyFn) {
+  const m = new Map();
+  rows.forEach(r => {
+    const k = keyFn(r) || '(belum diisi)';
+    let a = m.get(k);
+    if (!a) { a = { name: k, n: 0, niks: new Set(), gap: 0, crit: 0, high: 0, Disetujui: 0, Tertunda: 0, Ditolak: 0, cost: 0 }; m.set(k, a); }
+    a.n++; a.niks.add(r.nik); a.gap += r.gap || 0;
+    if (r.gap != null && r.gap <= -2) a.crit++;
+    if (r.prioritas === 'Tinggi') a.high++;
+    a[r.status] = (a[r.status] || 0) + 1;
+    a.cost += r.estimasi || 0;
+  });
+  return Array.from(m.values()).sort((a, b) => b.n - a.n || a.name.localeCompare(b.name, 'id'));
+}
+
+function renderTna() {
+  const f = S.t, rows = tFiltered(), total = rows.length;
+  $('#t-count').textContent = total;
+  $('#t-all').textContent = S.tna.length;
+
+  $$('#t-modes .mode-btn').forEach(b => {
+    const on = b.dataset.mode === f.mode;
+    b.className = 'mode-btn h-7 px-3 border font-semibold text-[11px] flex items-center gap-1.5 whitespace-nowrap ' + (on ? 'bg-blue-50 text-blue-700 border-blue-200' : 'bg-white text-slate-600 border-slate-200 hover:bg-slate-50');
+  });
+  $('#t-presets').innerHTML = T_PRESETS.map(p => {
+    const on = f.preset === p[0];
+    return '<button type="button" data-preset="' + p[0] + '" class="h-7 px-2.5 border font-medium ' + (on ? 'bg-slate-100 border-blue-600 text-blue-700 font-semibold' : 'bg-white border-slate-300 hover:bg-slate-100 text-slate-700') + '">' + p[1] + '</button>';
+  }).join('');
+
+  const indiv = f.mode === 'individu';
+  const n = f.sel.size;
+  $('#t-bulk').classList.toggle('hidden', !indiv);
+  $('#t-bulk-label').textContent = 'Aksi massal (' + n + ' baris):';
+  $$('#t-bulk button').forEach(b => { b.disabled = !n; b.classList.toggle('opacity-40', !n); });
+  const badge = $('#t-selbadge');
+  badge.classList.toggle('hidden', !n || !indiv); badge.textContent = n + ' terpilih';
+
+  const stateMsg = S.loading && !S.tna.length ? ['Memuat data dari Google Sheets…', 'sync']
+    : !S.tna.length ? ['Belum ada data TNA. Klik <b>Tambah Kebutuhan</b> untuk mulai.', 'playlist_add']
+    : !total ? ['Tidak ada data yang cocok dengan filter. Ubah atau reset filter.', 'filter_alt_off'] : null;
+
+  if (indiv) {
+    const sorted = sortRows(rows, f.sort);
+    const pages = Math.max(1, Math.ceil(total / f.per));
+    if (f.page > pages) f.page = pages;
+    const slice = sorted.slice((f.page - 1) * f.per, f.page * f.per);
+    const allSel = total > 0 && rows.every(r => f.sel.has(r.id));
+    const body = stateMsg ? emptyRow(11, stateMsg[0], stateMsg[1]) : slice.map((r, i) => {
+      const sel = f.sel.has(r.id);
+      return '<tr class="border-b border-slate-200 ' + (sel ? 'bg-blue-50' : 'hover:bg-slate-50') + '">' +
+        '<td class="w-10 text-center border-r border-slate-100"><input type="checkbox" class="row-cb" data-scope="t" data-key="' + esc(r.id) + '" aria-label="Pilih ' + esc(r.nama) + '"' + (sel ? ' checked' : '') + '></td>' +
+        '<td class="' + TD + ' num text-slate-500 text-center">' + ((f.page - 1) * f.per + i + 1) + '</td>' +
+        '<td class="' + TD + ' num font-medium text-blue-600">' + esc(r.nik) + '</td>' +
+        '<td class="' + TD + ' font-semibold">' + esc(r.nama) + '</td>' +
+        '<td class="' + TD + ' text-slate-600">' + (esc(r.dept) || '<span class="text-slate-300">—</span>') + '</td>' +
+        '<td class="' + TD + '">' + (esc(r.jabatan) || '<span class="text-slate-300">—</span>') + '</td>' +
+        '<td class="' + TD + ' text-center"><span class="num font-semibold">Level ' + (r.level == null ? '–' : r.level) + '</span> <span class="num text-slate-400">/ 5</span></td>' +
+        '<td class="' + TD + ' text-center">' + gapBadge(r.gap) + '</td>' +
+        '<td class="' + TD + '">' + esc(r.rekomendasi) + (r.prioritas === 'Tinggi' ? ' <span class="' + B_BAD + '">TINGGI</span>' : '') + '</td>' +
+        '<td class="' + TD + '">' + statusBadge(r.status) + '</td>' +
+        '<td class="px-3 text-center"><button type="button" data-act="t-view" data-id="' + esc(r.id) + '" class="px-2 h-6 border border-slate-300 bg-white hover:bg-slate-100 text-blue-700 font-medium">Detail</button></td></tr>';
+    }).join('');
+    $('#t-table').innerHTML = '<table class="w-full border-collapse text-left min-w-[1180px]"><thead><tr class="' + TH_ROW + '">' +
+      '<th class="w-10 text-center border-r border-slate-200"><input type="checkbox" data-act="t-sel-all" aria-label="Pilih semua hasil filter"' + (allSel ? ' checked' : '') + '></th>' +
+      '<th class="w-12 text-center border-r border-slate-200">No</th>' + sortHead('t', T_COLS, f.sort) + '<th class="w-20 px-3 text-center">Aksi</th></tr></thead><tbody>' + body + '</tbody></table>';
+    $('#t-foot').innerHTML = footHtml('t', total, f.page, f.per);
+    return;
+  }
+
+  // mode agregat: per departemen / per pelatihan
+  const isDept = f.mode === 'dept';
+  const agg = aggregate(rows, r => isDept ? r.dept : r.rekomendasi);
+  f.agg = agg;
+  const body = stateMsg ? emptyRow(11, stateMsg[0], stateMsg[1]) : agg.map((a, i) => {
+    const avg = a.n ? (a.gap / a.n) : 0;
+    return '<tr class="border-b border-slate-200 hover:bg-slate-50 cursor-pointer" data-act="t-drill" data-idx="' + i + '">' +
+      '<td class="' + TD + ' font-semibold">' + esc(a.name) + '</td>' +
+      '<td class="' + TD + ' num text-right">' + a.niks.size + '</td>' +
+      '<td class="' + TD + ' num text-right">' + a.n + '</td>' +
+      '<td class="' + TD + ' text-center">' + gapBadge(Math.round(avg * 10) / 10) + '</td>' +
+      '<td class="' + TD + ' num text-right ' + (a.crit ? 'text-red-800 font-bold' : 'text-slate-400') + '">' + a.crit + '</td>' +
+      '<td class="' + TD + ' num text-right">' + a.high + '</td>' +
+      '<td class="' + TD + ' num text-right">' + a.Disetujui + '</td>' +
+      '<td class="' + TD + ' num text-right">' + a.Tertunda + '</td>' +
+      '<td class="' + TD + ' num text-right">' + a.Ditolak + '</td>' +
+      '<td class="' + TD + ' num text-right">' + rupiah(a.cost) + '</td>' +
+      '<td class="px-3 text-center"><span class="text-blue-700 font-medium">Lihat individu ›</span></td></tr>';
+  }).join('');
+  const head = [isDept ? 'Departemen / Unit' : 'Rekomendasi Pelatihan', 'Karyawan', 'Kebutuhan', 'Rata-rata Gap', 'Gap Kritis', 'Prioritas Tinggi', 'Disetujui', 'Tertunda', 'Ditolak', 'Estimasi Investasi', ''];
+  $('#t-table').innerHTML = '<table class="w-full border-collapse text-left min-w-[1100px]"><thead><tr class="' + TH_ROW + '">' +
+    head.map((h, i) => '<th class="px-3 border-r border-slate-200 whitespace-nowrap ' + (i >= 1 && i <= 9 && i !== 3 ? 'text-right' : i === 3 ? 'text-center' : '') + '">' + h + '</th>').join('') + '</tr></thead><tbody>' + body + '</tbody></table>';
+  $('#t-foot').innerHTML = '<div>Menampilkan <span class="num font-semibold text-slate-900">' + agg.length + '</span> ' + (isDept ? 'departemen' : 'program pelatihan') + ' dari <span class="num font-semibold text-slate-900">' + total + '</span> kebutuhan. Klik satu baris untuk melihat karyawannya.</div>';
+}
+
+/* =====================================================================
+ *  RENDER, TAB, HEADER
+ * ===================================================================== */
+function renderHeader() {
+  const peserta = S.tab === 'peserta';
+  $('#hdr-title').textContent = peserta ? 'Data Peserta Pelatihan' : 'Training Need Analysis (TNA)';
+  $('#hdr-sub').textContent = peserta ? 'Portal Pelatihan & Induksi OHS' : 'Pencarian dan analisis kebutuhan pelatihan karyawan';
+  $('#add-label').textContent = peserta ? 'Tambah Peserta' : 'Tambah Kebutuhan';
+  $$('.tab-btn').forEach(b => {
+    const on = b.dataset.tab === S.tab;
+    b.className = 'tab-btn pb-2.5 px-1 border-b-2 font-semibold text-xs ' + (on ? 'border-blue-600 text-blue-600' : 'border-transparent text-slate-500 hover:text-slate-800');
+    if (on) b.setAttribute('aria-current', 'page'); else b.removeAttribute('aria-current');
+  });
+  $('#view-peserta').classList.toggle('hidden', !peserta);
+  $('#view-tna').classList.toggle('hidden', peserta);
+}
+function renderAll() { renderHeader(); renderPeserta(); renderTna(); }
+function setTab(tab, updateHash) {
+  S.tab = tab === 'tna' ? 'tna' : 'peserta';
+  if (updateHash !== false) { try { history.replaceState(null, '', '#' + S.tab); } catch (e) { location.hash = S.tab; } }
+  renderHeader();
+}
+
+/* =====================================================================
+ *  MODAL
+ * ===================================================================== */
+const IN = 'w-full h-8 px-2 bg-white border border-slate-300 text-xs placeholder:text-slate-400';
+const LEVEL_LABEL = { 1: 'Dasar', 2: 'Berkembang', 3: 'Cakap', 4: 'Advanced', 5: 'Ahli' };
+let FORM = { rec: null };
+
+function openModal(html, w) {
+  $('#modal-root').innerHTML = '<div class="fixed inset-0 z-50 bg-slate-900/40 flex items-start sm:items-center justify-center p-3 overflow-y-auto"><div class="bg-white border border-slate-900 keyline w-full ' + (w || 'max-w-lg') + ' my-4" role="dialog" aria-modal="true">' + html + '</div></div>';
+  const first = $('#modal-root input:not([type=hidden]):not([disabled]), #modal-root select');
+  if (first) first.focus();
+}
+function closeModal() { $('#modal-root').innerHTML = ''; }
+function mHead(title, sub) {
+  return '<div class="flex items-start justify-between gap-3 px-4 py-3 border-b border-slate-300 bg-slate-50"><div class="min-w-0"><h2 class="text-sm font-bold truncate">' + esc(title) + '</h2>' +
+    (sub ? '<div class="num text-[11px] text-slate-500 mt-0.5">' + sub + '</div>' : '') + '</div>' +
+    '<button type="button" data-act="modal-close" aria-label="Tutup" class="h-7 w-7 -mr-1 hover:bg-slate-200 flex items-center justify-center shrink-0"><span class="material-symbols-outlined">close</span></button></div>';
+}
+function field(label, inner, cls) { return '<label class="block ' + (cls || '') + '"><span class="block mb-1 font-semibold text-slate-600">' + label + '</span>' + inner + '</label>'; }
+function dlist(id, vals) { return '<datalist id="' + id + '">' + vals.map(v => '<option value="' + esc(v) + '">').join('') + '</datalist>'; }
+function kv(label, val, mono) { return '<div class="border border-slate-200 p-2.5"><div class="text-[11px] text-slate-500 mb-0.5">' + label + '</div><div class="font-semibold ' + (mono ? 'num' : '') + '">' + (val || '<span class="text-slate-300">—</span>') + '</div></div>'; }
+function btn(label, act, kind, extra) {
+  const cls = kind === 'primary' ? 'bg-blue-600 hover:bg-blue-700 border-blue-700 text-white'
+    : kind === 'danger' ? 'bg-white border-red-300 text-red-700 hover:bg-red-50'
+    : 'bg-white border-slate-300 hover:bg-slate-100 hover:border-slate-400 text-slate-900';
+  return '<button type="' + (act ? 'button' : 'submit') + '" ' + (act ? 'data-act="' + act + '" ' : '') + (extra || '') + ' class="h-8 px-3 border font-semibold ' + cls + ' disabled:opacity-50">' + label + '</button>';
+}
+function formErr(msg) { const el = $('#f-err'); if (el) { el.textContent = msg; el.classList.remove('hidden'); } }
+function setBusy(form, on) {
+  $$('button', form).forEach(b => { b.disabled = on; });
+  const s = $('[type=submit]', form); if (s) { if (on) { s.dataset.t = s.textContent; s.textContent = 'Menyimpan…'; } else if (s.dataset.t) s.textContent = s.dataset.t; }
+}
+function askConfirm(title, msg, okLabel, danger) {
+  return new Promise(resolve => {
+    const wrap = document.createElement('div');
+    wrap.className = 'fixed inset-0 z-[60] bg-slate-900/40 flex items-center justify-center p-3';
+    wrap.innerHTML = '<div role="alertdialog" aria-modal="true" class="bg-white border border-slate-900 keyline w-full max-w-sm">' + mHead(title).replace('data-act="modal-close"', 'data-cf="no"') +
+      '<div class="p-4 text-slate-700">' + msg + '</div><div class="px-4 py-3 border-t border-slate-200 flex justify-end gap-2">' +
+      '<button type="button" data-cf="no" class="h-8 px-3 border border-slate-300 bg-white hover:bg-slate-100 font-semibold">Batal</button>' +
+      '<button type="button" data-cf="yes" class="h-8 px-3 border font-semibold ' + (danger ? 'bg-red-600 border-red-700 text-white hover:bg-red-700' : 'bg-blue-600 border-blue-700 text-white hover:bg-blue-700') + '">' + esc(okLabel) + '</button></div></div>';
+    const done = v => { wrap.remove(); document.removeEventListener('keydown', onKey, true); resolve(v); };
+    const onKey = e => { if (e.key === 'Escape') { e.stopPropagation(); done(false); } };
+    wrap.addEventListener('click', e => { const b = e.target.closest('[data-cf]'); if (b) done(b.dataset.cf === 'yes'); });
+    document.addEventListener('keydown', onKey, true);
+    document.body.appendChild(wrap);
+    $('[data-cf=yes]', wrap).focus();
+  });
+}
+
+/* ---------- Peserta: form, detail ---------- */
+function openPesertaForm(rec) {
+  FORM = { rec: rec || null };
+  const r = rec || { nik: '', nama: '', company: '', trainer: '', tanggal: todayIso(), pelatihan: '' };
+  const courses = sortedUniq(['Induksi Area Specific'].concat(S.peserta.map(x => x.pelatihan)));
+  openModal(mHead(rec ? 'Edit data peserta' : 'Tambah peserta', rec ? 'Baris sheet #' + rec.row : '') +
+    '<form id="f-peserta" class="p-4 flex flex-col gap-3" autocomplete="off">' +
+    '<div class="grid grid-cols-1 sm:grid-cols-2 gap-3">' +
+      field('ID karyawan', '<input name="nik" id="f-nik" list="dl-nik" class="' + IN + ' num" value="' + esc(r.nik) + '" placeholder="SANGATI-26xxxx / PBT26xxxx">') +
+      field('Nama karyawan <span class="text-red-600">*</span>', '<input name="nama" id="f-nama" required class="' + IN + '" value="' + esc(r.nama) + '">') +
+    '</div>' +
+    '<div class="grid grid-cols-1 sm:grid-cols-2 gap-3">' +
+      field('Perusahaan', '<input name="company" id="f-company" list="dl-company" class="' + IN + '" value="' + esc(r.company) + '">') +
+      field('Nama trainer', '<input name="trainer" list="dl-trainer" class="' + IN + '" value="' + esc(r.trainer) + '">') +
+    '</div>' +
+    '<div class="grid grid-cols-1 sm:grid-cols-2 gap-3">' +
+      field('Tanggal training <span class="text-red-600">*</span>', '<input name="tanggal" type="date" required class="' + IN + ' num" value="' + esc(r.tanggal) + '">') +
+      field('Nama pelatihan', '<input name="pelatihan" list="dl-course" class="' + IN + '" value="' + esc(r.pelatihan) + '">') +
+    '</div>' +
+    (rec && rec.tanggalRaw ? '<p class="text-amber-700">Isi tanggal asli di sheet tidak terbaca: <span class="num">' + esc(rec.tanggalRaw) + '</span>. Pilih tanggal yang benar lalu simpan.</p>' : '') +
+    dlist('dl-nik', sortedUniq(S.peserta.map(x => x.nik))) + dlist('dl-company', sortedUniq(S.peserta.map(x => x.company))) +
+    dlist('dl-trainer', sortedUniq(S.peserta.map(x => x.trainer))) + dlist('dl-course', courses) +
+    '<div id="f-err" class="hidden border border-red-200 bg-red-50 text-red-800 px-2.5 py-1.5"></div>' +
+    '<div class="flex justify-between gap-2 pt-1"><div>' + (rec ? btn('Hapus', 'p-delete', 'danger') : '') + '</div><div class="flex gap-2">' + btn('Batal', 'modal-close') + btn(rec ? 'Simpan perubahan' : 'Simpan peserta', null, 'primary') + '</div></div></form>', 'max-w-xl');
+}
+async function submitPeserta(form) {
+  const g = n => form.elements[n].value.trim();
+  const data = { nik: g('nik'), nama: g('nama'), company: g('company'), trainer: g('trainer'), tanggal: g('tanggal'), pelatihan: g('pelatihan') };
+  if (!data.nama) return formErr('Nama karyawan wajib diisi.');
+  if (!data.tanggal) return formErr('Tanggal training wajib diisi.');
+  const rec = FORM.rec;
+  if (rec) { data.row = rec.row; data.fp = rec.fp; }
+  setBusy(form, true);
+  try { await mutate(rec ? 'peserta.update' : 'peserta.add', data, rec ? 'Perubahan disimpan.' : 'Peserta ditambahkan.'); closeModal(); }
+  catch (e) {
+    setBusy(form, false); formErr(e.message);
+    if (e.code === 'STALE') { formErr(e.message + ' Daftar sedang dimuat ulang; tutup form ini lalu buka lagi.'); load(); }
+  }
+}
+async function deletePeserta() {
+  const rec = FORM.rec; if (!rec) return;
+  if (!await askConfirm('Hapus peserta?', 'Baris <b>' + esc(rec.nama) + '</b> akan dihapus dari Google Sheets. Tindakan ini tidak bisa dibatalkan.', 'Hapus', true)) return;
+  try { await mutate('peserta.delete', { row: rec.row, fp: rec.fp }, 'Peserta dihapus.'); closeModal(); }
+  catch (e) { formErr(e.message); if (e.code === 'STALE') load(); }
+}
+function openPesertaView(rec) {
+  const tn = tnaOf(rec.nik, rec.nama);
+  const flags = (rec._dup ? '<span class="' + B_WARN + '">DUPLIKAT</span> ' : '') + (rec._noid ? '<span class="' + B_NEU + '">ID KOSONG</span> ' : '') + (rec._nocomp ? '<span class="' + B_NEU + '">PERUSAHAAN KOSONG</span>' : '');
+  openModal(mHead(rec.nama, esc(rec.nik) || 'ID karyawan kosong') +
+    '<div class="p-4 flex flex-col gap-3"><div class="grid grid-cols-1 sm:grid-cols-2 gap-2">' +
+    kv('Perusahaan', esc(rec.company)) + kv('Nama pelatihan', esc(rec.pelatihan)) + kv('Nama trainer', esc(rec.trainer)) +
+    kv('Tanggal training', rec.tanggal ? fmtDate(rec.tanggal) : esc(rec.tanggalRaw), true) + kv('Baris di sheet', String(rec.row), true) + '</div>' +
+    (flags ? '<div class="flex flex-wrap gap-1.5">' + flags + '</div>' : '') +
+    '<div><div class="font-semibold text-slate-600 mb-1.5">Kebutuhan TNA terkait (' + tn.length + ')</div>' +
+    (tn.length ? '<div class="border border-slate-200 divide-y divide-slate-200">' + tn.map(t =>
+      '<div class="px-2.5 py-1.5 flex items-center justify-between gap-2"><span class="min-w-0 truncate">' + esc(t.rekomendasi) + '</span><span class="flex items-center gap-1.5 shrink-0">' + gapBadge(t.gap) + statusBadge(t.status) +
+      '<button type="button" data-act="t-view" data-id="' + esc(t.id) + '" class="px-2 h-6 border border-slate-300 bg-white hover:bg-slate-100 text-blue-700 font-medium">Buka</button></span></div>').join('') + '</div>'
+      : '<div class="border border-dashed border-slate-300 px-2.5 py-2 text-slate-500">Belum ada kebutuhan TNA untuk karyawan ini (dicocokkan lewat ID karyawan atau nama).</div>') + '</div></div>' +
+    '<div class="px-4 py-3 border-t border-slate-200 flex justify-end gap-2">' + btn('Tutup', 'modal-close') + btn('Edit data', 'p-edit-from-view', 'primary', 'data-key="' + rec.row + '"') + '</div>', 'max-w-xl');
+}
+
+/* ---------- TNA: form, detail ---------- */
+function levelOpts(sel) { return [1, 2, 3, 4, 5].map(n => '<option value="' + n + '"' + (n === sel ? ' selected' : '') + '>Level ' + n + ' — ' + LEVEL_LABEL[n] + '</option>').join(''); }
+function gapPreview(form) {
+  const el = $('#f-gap'); if (!el) return;
+  const l = +form.elements.level.value, t = +form.elements.target.value, g = Math.min(0, l - t);
+  el.innerHTML = gapBadge(g);
+}
+function openTnaForm(rec) {
+  FORM = { rec: rec || null };
+  const r = rec || { nik: '', nama: '', dept: '', jabatan: '', level: 2, target: 4, rekomendasi: '', prioritas: 'Sedang', status: 'Tertunda', metode: '', format: '', estimasi: '' };
+  const niks = sortedUniq(S.tna.map(x => x.nik).concat(S.peserta.map(x => x.nik)));
+  const recs = sortedUniq(S.tna.map(x => x.rekomendasi).concat(S.peserta.map(x => x.pelatihan)));
+  openModal(mHead(rec ? 'Edit kebutuhan TNA' : 'Input kebutuhan TNA baru', rec ? esc(rec.id) : '') +
+    '<form id="f-tna" class="p-4 flex flex-col gap-3" autocomplete="off">' +
+    '<div class="grid grid-cols-1 sm:grid-cols-2 gap-3">' +
+      field('NIK / ID karyawan <span class="text-red-600">*</span>', '<input name="nik" id="f-tnik" list="dl-tnik" required class="' + IN + ' num" value="' + esc(r.nik) + '" placeholder="Ketik atau pilih dari data peserta">') +
+      field('Nama lengkap <span class="text-red-600">*</span>', '<input name="nama" id="f-tnama" required class="' + IN + '" value="' + esc(r.nama) + '">') +
+    '</div>' +
+    '<div class="grid grid-cols-1 sm:grid-cols-2 gap-3">' +
+      field('Departemen / unit', '<input name="dept" list="dl-dept" class="' + IN + '" value="' + esc(r.dept) + '">') +
+      field('Jabatan / role', '<input name="jabatan" class="' + IN + '" value="' + esc(r.jabatan) + '">') +
+    '</div>' +
+    '<div class="grid grid-cols-1 sm:grid-cols-3 gap-3">' +
+      field('Kompetensi saat ini', '<select name="level" class="' + IN + '">' + levelOpts(r.level) + '</select>') +
+      field('Target kompetensi', '<select name="target" class="' + IN + '">' + levelOpts(r.target) + '</select>') +
+      '<div><span class="block mb-1 font-semibold text-slate-600">Gap kompetensi</span><div id="f-gap" class="h-8 flex items-center"></div></div>' +
+    '</div>' +
+    '<div class="grid grid-cols-1 sm:grid-cols-2 gap-3">' +
+      field('Prioritas', '<select name="prioritas" class="' + IN + '">' + ['Tinggi', 'Sedang', 'Rutin'].map(v => '<option' + (v === r.prioritas ? ' selected' : '') + '>' + v + '</option>').join('') + '</select>') +
+      field('Status', '<select name="status" class="' + IN + '">' + ['Tertunda', 'Disetujui', 'Ditolak'].map(v => '<option' + (v === r.status ? ' selected' : '') + '>' + v + '</option>').join('') + '</select>') +
+    '</div>' +
+    field('Rekomendasi pelatihan <span class="text-red-600">*</span>', '<input name="rekomendasi" list="dl-rek" required class="' + IN + '" value="' + esc(r.rekomendasi) + '" placeholder="Nama program pelatihan / sertifikasi">') +
+    '<div class="grid grid-cols-1 sm:grid-cols-2 gap-3">' +
+      field('Metode evaluasi', '<input name="metode" list="dl-met" class="' + IN + '" value="' + esc(r.metode) + '">') +
+      field('Format pelatihan', '<input name="format" list="dl-fmt" class="' + IN + '" value="' + esc(r.format) + '">') +
+    '</div>' +
+    field('Estimasi investasi per peserta (Rp)', '<input name="estimasi" type="number" min="0" step="1000" class="' + IN + ' num" value="' + esc(r.estimasi == null ? '' : r.estimasi) + '" placeholder="12500000">') +
+    dlist('dl-tnik', niks) + dlist('dl-dept', sortedUniq(DEPT_DEFAULT.concat(S.tna.map(x => x.dept)))) + dlist('dl-rek', recs) +
+    dlist('dl-met', sortedUniq(METODE_DEFAULT.concat(S.tna.map(x => x.metode)))) + dlist('dl-fmt', sortedUniq(FORMAT_DEFAULT.concat(S.tna.map(x => x.format)))) +
+    '<div id="f-err" class="hidden border border-red-200 bg-red-50 text-red-800 px-2.5 py-1.5"></div>' +
+    '<div class="flex justify-between gap-2 pt-1"><div>' + (rec ? btn('Hapus', 't-delete', 'danger') : '') + '</div><div class="flex gap-2">' + btn('Batal', 'modal-close') + btn(rec ? 'Simpan perubahan' : 'Simpan data', null, 'primary') + '</div></div></form>', 'max-w-2xl');
+  gapPreview($('#f-tna'));
+}
+/** Isi otomatis nama/departemen/jabatan saat NIK cocok dengan data yang sudah ada. */
+function autofillTna(form) {
+  const a = nn(form.elements.nik.value); if (!a) return;
+  const t = S.tna.find(x => nn(x.nik) === a), p = S.peserta.find(x => nn(x.nik) === a);
+  const set = (n, v) => { if (v && !form.elements[n].value) form.elements[n].value = v; };
+  set('nama', (t && t.nama) || (p && p.nama)); set('dept', t && t.dept); set('jabatan', t && t.jabatan);
+}
+function autofillPeserta(form) {
+  const a = nn(form.elements.nik.value); if (!a) return;
+  const p = S.peserta.find(x => nn(x.nik) === a);
+  const set = (n, v) => { if (v && !form.elements[n].value) form.elements[n].value = v; };
+  if (p) { set('nama', p.nama); set('company', p.company); }
+}
+async function submitTna(form) {
+  const g = n => form.elements[n].value.trim();
+  const data = { nik: g('nik'), nama: g('nama'), dept: g('dept'), jabatan: g('jabatan'), level: +g('level'), target: +g('target'), prioritas: g('prioritas'), status: g('status'), rekomendasi: g('rekomendasi'), metode: g('metode'), format: g('format'), estimasi: g('estimasi') === '' ? 0 : +g('estimasi') };
+  const rec = FORM.rec; if (rec) data.id = rec.id;
+  setBusy(form, true);
+  try { await mutate(rec ? 'tna.update' : 'tna.add', data, rec ? 'Perubahan disimpan.' : 'Kebutuhan TNA dicatat.'); closeModal(); }
+  catch (e) { setBusy(form, false); formErr(e.message); if (e.code === 'STALE') load(); }
+}
+async function deleteTna() {
+  const rec = FORM.rec; if (!rec) return;
+  if (!await askConfirm('Hapus kebutuhan TNA?', 'Data <b>' + esc(rec.nama) + '</b> — ' + esc(rec.rekomendasi) + ' akan dihapus dari Google Sheets.', 'Hapus', true)) return;
+  try { await mutate('tna.delete', { id: rec.id }, 'Data TNA dihapus.'); closeModal(); }
+  catch (e) { formErr(e.message); if (e.code === 'STALE') load(); }
+}
+function openTnaView(rec) {
+  FORM = { rec: rec };
+  const hist = pesertaOf(rec.nik, rec.nama).sort((a, b) => cmp(a.tanggal, b.tanggal, 'desc'));
+  openModal(mHead(rec.nama, esc(rec.nik) + ' · ' + esc(rec.id)) +
+    '<div class="p-4 flex flex-col gap-3">' +
+    '<div class="grid grid-cols-2 sm:grid-cols-3 gap-2">' + kv('Departemen / unit', esc(rec.dept)) + kv('Jabatan', esc(rec.jabatan)) +
+      kv('Kompetensi saat ini', 'Level ' + (rec.level == null ? '–' : rec.level) + ' / 5', true) + kv('Gap kompetensi', gapBadge(rec.gap)) +
+      kv('Prioritas', esc(rec.prioritas)) + kv('Status', statusBadge(rec.status)) + '</div>' +
+    '<div class="font-semibold text-slate-600 -mb-1">Rekomendasi: <span class="text-slate-900">' + esc(rec.rekomendasi) + '</span></div>' +
+    '<div class="grid grid-cols-1 sm:grid-cols-2 gap-2">' + kv('Metode evaluasi', esc(rec.metode)) +
+      kv('Target peningkatan', rec.target ? 'Level ' + rec.target + ' (' + LEVEL_LABEL[rec.target] + ')' : '') + kv('Rekomendasi format', esc(rec.format)) +
+      kv('Estimasi investasi', rec.estimasi ? rupiah(rec.estimasi) + ' / peserta' : '', true) + '</div>' +
+    '<div><div class="font-semibold text-slate-600 mb-1.5">Riwayat pelatihan di data peserta (' + hist.length + ')</div>' +
+    (hist.length ? '<div class="border border-slate-200 max-h-44 overflow-y-auto"><table class="w-full border-collapse"><tbody class="divide-y divide-slate-200">' + hist.map(h =>
+      '<tr><td class="px-2.5 py-1 num text-slate-600 whitespace-nowrap">' + (h.tanggal ? fmtDate(h.tanggal) : esc(h.tanggalRaw) || '—') + '</td><td class="px-2.5 py-1">' + (esc(h.pelatihan) || '<span class="text-slate-400">Induksi</span>') + '</td><td class="px-2.5 py-1 text-slate-600">' + esc(h.trainer) + '</td></tr>').join('') + '</tbody></table></div>'
+      : '<div class="border border-dashed border-slate-300 px-2.5 py-2 text-slate-500">Belum ada riwayat. Dicocokkan lewat ID karyawan atau nama di halaman Data Peserta.</div>') + '</div></div>' +
+    '<div class="px-4 py-3 border-t border-slate-200 flex flex-wrap justify-between gap-2"><div class="flex gap-2">' + btn('Edit', 't-edit-from-view') + btn('Tolak', 't-reject', 'danger') + '</div>' +
+    '<div class="flex gap-2">' + btn('Tutup', 'modal-close') + btn(rec.status === 'Disetujui' ? 'Sudah disetujui' : 'Setujui rekomendasi', 't-approve', 'primary', rec.status === 'Disetujui' ? 'disabled' : '') + '</div></div>', 'max-w-2xl');
+}
+async function setStatusOne(status, msg) {
+  const rec = FORM.rec; if (!rec) return;
+  try { await mutate('tna.status', { id: rec.id, status: status }, msg); closeModal(); }
+  catch (e) { toast(e.message, 'error'); if (e.code === 'STALE') load(); }
+}
+async function approveSelected() {
+  const ids = Array.from(S.t.sel).filter(id => { const r = S.tna.find(x => x.id === id); return r && r.status !== 'Disetujui'; });
+  if (!ids.length) { toast('Semua baris terpilih sudah disetujui.'); return; }
+  if (!await askConfirm('Setujui ' + ids.length + ' rekomendasi?', 'Status ' + ids.length + ' baris terpilih akan menjadi <b>Disetujui</b>.', 'Setujui')) return;
+  try {
+    for (let i = 0; i < ids.length; i++) await mutate('tna.status', { id: ids[i], status: 'Disetujui' }, i === ids.length - 1 ? ids.length + ' rekomendasi disetujui.' : null);
+  } catch (e) { toast(e.message, 'error'); }
+}
+
+/* =====================================================================
+ *  EKSPOR
+ * ===================================================================== */
+const P_HEAD = ['ID Karyawan', 'Nama Karyawan', 'Perusahaan', 'Nama Pelatihan', 'Nama Trainer', 'Tanggal Training'];
+const T_HEAD = ['NIK', 'Nama Karyawan', 'Departemen', 'Jabatan', 'Level Saat Ini', 'Level Target', 'Gap', 'Rekomendasi Pelatihan', 'Prioritas', 'Status', 'Metode Evaluasi', 'Format Pelatihan', 'Estimasi Investasi'];
+const pAoa = rows => rows.map(r => [r.nik, r.nama, r.company, r.pelatihan, r.trainer, r.tanggal ? dmy(r.tanggal) : r.tanggalRaw]);
+const tAoa = rows => rows.map(r => [r.nik, r.nama, r.dept, r.jabatan, r.level, r.target, r.gap, r.rekomendasi, r.prioritas, r.status, r.metode, r.format, r.estimasi]);
+
+function loadScript(src) {
+  return new Promise((res, rej) => {
+    if (window.XLSX) return res();
+    const s = document.createElement('script'); s.src = src; s.onload = res; s.onerror = () => rej(new Error('Pustaka Excel gagal dimuat'));
+    document.head.appendChild(s);
+  });
+}
+function download(blob, name) {
+  const a = document.createElement('a'); a.href = URL.createObjectURL(blob); a.download = name;
+  document.body.appendChild(a); a.click(); a.remove(); setTimeout(() => URL.revokeObjectURL(a.href), 2000);
+}
+async function exportTable(name, head, aoa) {
+  if (!aoa.length) { toast('Tidak ada data untuk diekspor.', 'error'); return; }
+  try {
+    await loadScript(XLSX_URL);
+    const ws = XLSX.utils.aoa_to_sheet([head].concat(aoa));
+    ws['!cols'] = head.map((h, i) => ({ wch: Math.min(40, Math.max(h.length, ...aoa.map(r => String(r[i] == null ? '' : r[i]).length)) + 2) }));
+    const wb = XLSX.utils.book_new(); XLSX.utils.book_append_sheet(wb, ws, 'Data');
+    XLSX.writeFile(wb, name + '.xlsx');
+    toast(aoa.length + ' baris diekspor ke Excel.');
+  } catch (e) {
+    const q = v => '"' + String(v == null ? '' : v).replace(/"/g, '""') + '"';
+    const csv = '\ufeff' + [head].concat(aoa).map(r => r.map(q).join(',')).join('\r\n');
+    download(new Blob([csv], { type: 'text/csv;charset=utf-8' }), name + '.csv');
+    toast('Pustaka Excel tidak tersedia, file diunduh sebagai CSV.');
+  }
+}
+function copyText(text) {
+  const fallback = () => { const ta = document.createElement('textarea'); ta.value = text; document.body.appendChild(ta); ta.select(); try { document.execCommand('copy'); } catch (e) { /* abaikan */ } ta.remove(); };
+  if (navigator.clipboard && navigator.clipboard.writeText) return navigator.clipboard.writeText(text).catch(fallback);
+  fallback(); return Promise.resolve();
+}
+function doExport(selectedOnly) {
+  const stamp = todayIso();
+  if (S.tab === 'peserta') {
+    let rows = pFiltered(); if (selectedOnly) rows = rows.filter(r => S.p.sel.has(r.row));
+    exportTable('peserta-pelatihan-' + stamp, P_HEAD, pAoa(rows));
+  } else {
+    let rows = sortRows(tFiltered(), S.t.sort); if (selectedOnly) rows = rows.filter(r => S.t.sel.has(r.id));
+    exportTable('tna-' + stamp, T_HEAD, tAoa(rows));
+  }
+}
+
+/* =====================================================================
+ *  EVENT
+ * ===================================================================== */
+function resetP() {
+  Object.assign(S.p, { search: '', company: '', trainer: '', course: '', from: '', to: '', quick: 'all', flag: '', page: 1 });
+  ['#p-search', '#p-company', '#p-trainer', '#p-course', '#p-from', '#p-to', '#p-flag'].forEach(s => { $(s).value = ''; });
+}
+function resetT() {
+  Object.assign(S.t, { search: '', dept: '', status: '', preset: '', page: 1 });
+  ['#t-search', '#t-dept', '#t-status'].forEach(s => { $(s).value = ''; });
+}
+function toggleSel(scope, key, on) {
+  const set = scope === 'p' ? S.p.sel : S.t.sel, k = scope === 'p' ? Number(key) : key;
+  if (on) set.add(k); else set.delete(k);
+}
+
+document.addEventListener('click', e => {
+  const el = e.target.closest('[data-act],[data-tab],[data-mode],[data-quick],[data-preset],[data-pg],[data-sort]');
+  if (!el || el.type === 'checkbox') return;
+  const d = el.dataset;
+
+  if (d.tab) { setTab(d.tab); return; }
+  if (d.mode) { S.t.mode = d.mode; S.t.page = 1; renderTna(); return; }
+  if (d.quick) { setQuick(d.quick); renderPeserta(); return; }
+  if (d.preset) { S.t.preset = S.t.preset === d.preset ? '' : d.preset; S.t.page = 1; renderTna(); return; }
+  if (d.pg) { const s = S[d.scope]; s.page = Math.max(1, +d.pg); d.scope === 'p' ? renderPeserta() : renderTna(); return; }
+  if (d.sort) {
+    const s = S[d.scope].sort;
+    if (s.key === d.sort) s.dir = s.dir === 'asc' ? 'desc' : 'asc'; else { s.key = d.sort; s.dir = 'asc'; }
+    S[d.scope].page = 1; d.scope === 'p' ? renderPeserta() : renderTna(); return;
+  }
+
+  switch (d.act) {
+    case 'refresh': hideBanner(); load(); break;
+    case 'export': doExport(false); break;
+    case 'add': S.tab === 'peserta' ? openPesertaForm() : openTnaForm(); break;
+    case 'modal-close': closeModal(); break;
+    case 'demo-on': S.demo = true; demoInit(); closeModal(); hideBanner(); load(); break;
+    case 'demo-off': S.demo = false; S.peserta = []; S.tna = []; hideBanner(); setStatus('idle', 'Belum terhubung'); renderAll(); load(); break;
+    case 'p-reset': resetP(); renderPeserta(); break;
+    case 't-reset': resetT(); renderTna(); break;
+    case 'p-view': { const r = S.peserta.find(x => x.row === +d.key); if (r) openPesertaView(r); break; }
+    case 'p-edit': case 'p-edit-from-view': { const r = S.peserta.find(x => x.row === +d.key); if (r) openPesertaForm(r); break; }
+    case 'p-delete': deletePeserta(); break;
+    case 'p-export-sel': doExport(true); break;
+    case 'p-copy-sel': {
+      const rows = pFiltered().filter(r => S.p.sel.has(r.row));
+      copyText([P_HEAD].concat(pAoa(rows)).map(r => r.join('\t')).join('\n')).then(() => toast(rows.length + ' baris disalin. Tempel ke Excel atau Sheets.'));
+      break;
+    }
+    case 't-view': { const r = S.tna.find(x => x.id === d.id); if (r) openTnaView(r); break; }
+    case 't-edit-from-view': openTnaForm(FORM.rec); break;
+    case 't-delete': deleteTna(); break;
+    case 't-approve': setStatusOne('Disetujui', 'Rekomendasi disetujui.'); break;
+    case 't-reject': setStatusOne('Ditolak', 'Rekomendasi ditolak.'); break;
+    case 't-export-sel': doExport(true); break;
+    case 't-approve-sel': approveSelected(); break;
+    case 't-drill': {
+      const a = S.t.agg[+d.idx]; if (!a) break;
+      resetT();
+      if (S.t.mode === 'dept') { S.t.dept = a.name; $('#t-dept').value = a.name; }
+      else { S.t.search = a.name; $('#t-search').value = a.name; }
+      S.t.mode = 'individu'; renderTna(); break;
+    }
+  }
+});
+
+document.addEventListener('change', e => {
+  const t = e.target;
+  if (t.classList.contains('row-cb')) { toggleSel(t.dataset.scope, t.dataset.key, t.checked); t.dataset.scope === 'p' ? renderPeserta() : renderTna(); return; }
+  if (t.dataset.act === 'p-sel-all') { pFiltered().forEach(r => toggleSel('p', r.row, t.checked)); renderPeserta(); return; }
+  if (t.dataset.act === 't-sel-all') { tFiltered().forEach(r => toggleSel('t', r.id, t.checked)); renderTna(); return; }
+  if (t.dataset.per) { const s = S[t.dataset.per]; s.per = +t.value; s.page = 1; t.dataset.per === 'p' ? renderPeserta() : renderTna(); return; }
+  const pmap = { 'p-company': 'company', 'p-trainer': 'trainer', 'p-course': 'course', 'p-flag': 'flag', 'p-from': 'from', 'p-to': 'to' };
+  if (pmap[t.id]) {
+    S.p[pmap[t.id]] = t.value; S.p.page = 1;
+    if (t.id === 'p-from' || t.id === 'p-to') S.p.quick = 'custom';
+    renderPeserta(); return;
+  }
+  if (t.id === 't-dept') { S.t.dept = t.value; S.t.page = 1; renderTna(); return; }
+  if (t.id === 't-status') { S.t.status = t.value; S.t.page = 1; renderTna(); return; }
+  if (t.id === 'f-tnik') autofillTna(t.form);
+  if (t.id === 'f-nik') autofillPeserta(t.form);
+});
+
+let debounce;
+document.addEventListener('input', e => {
+  const t = e.target;
+  if (t.id === 'p-search' || t.id === 't-search') {
+    clearTimeout(debounce);
+    debounce = setTimeout(() => {
+      if (t.id === 'p-search') { S.p.search = t.value; S.p.page = 1; renderPeserta(); }
+      else { S.t.search = t.value; S.t.page = 1; renderTna(); }
+    }, 150);
+  }
+  if (t.form && t.form.id === 'f-tna' && (t.name === 'level' || t.name === 'target')) gapPreview(t.form);
+});
+document.addEventListener('change', e => { if (e.target.form && e.target.form.id === 'f-tna' && (e.target.name === 'level' || e.target.name === 'target')) gapPreview(e.target.form); });
+
+document.addEventListener('submit', e => {
+  e.preventDefault();
+  const f = e.target;
+  if (f.id === 'f-peserta') submitPeserta(f);
+  else if (f.id === 'f-tna') submitTna(f);
+});
+document.addEventListener('keydown', e => { if (e.key === 'Escape' && $('#modal-root').firstChild && !document.querySelector('[data-cf]')) closeModal(); });
+window.addEventListener('hashchange', () => setTab(location.hash === '#tna' ? 'tna' : 'peserta', false));
+
+/* ---------- mulai ---------- */
+S.tab = location.hash === '#tna' ? 'tna' : 'peserta';
+renderAll();
+// API_URL sudah diatur & tidak perlu PIN — langsung muat data
+load();
+
+})();
+</script>
+</body>
+</html>
